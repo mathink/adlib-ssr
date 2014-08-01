@@ -1,7 +1,7 @@
 adlib-ssr
 =========
 
-additional libraries using SSReflect
+Additional library which depends on SSReflect (by my ad-lib coding).
 
 (compatible with ssreflect-1.5 and coq-8.4pl4)
 
