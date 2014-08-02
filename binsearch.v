@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/2 13:15:36> *)
+(* Time-stamp: <2014/8/2 13:16:11> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -188,6 +188,8 @@ Section BinarySearchTree.
     Qed.    
     
 (* In Progress... *)
+
+  End Operations.
 
 End BinarySearchTree.
 
