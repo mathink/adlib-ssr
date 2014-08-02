@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/2 9:50:29> *)
+(* Time-stamp: <2014/8/2 10:1:27> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -584,8 +584,8 @@ Section EqBtree.
   Proof.
     elim: t => [//= | /= x tl IHl tr IHr].
     rewrite -4!andbA.
-    move=> /and4P [/negbTE Hninl /IHl->{IHl}
-                   /negbTE Hninr /and3P [/IHr->{IHr} Hrl Hlr]].
+    move=> /and3P [/negbTE Hninl /IHl->{IHl}
+                   /and4P [/negbTE Hninr /IHr->{IHr} Hrl Hlr]].
     rewrite in_bnode [x == a]eq_sym; case: eqP => [-> | Hneq] /=;
       first by rewrite Hninl Hninr //=.
     rewrite add0n.
