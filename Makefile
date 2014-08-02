@@ -81,6 +81,7 @@ endif
 ######################
 
 VFILES:=tree.v\
+  binsearch.v\
   btree.v
 
 -include $(addsuffix .d,$(VFILES))

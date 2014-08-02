@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="coqdoc.css" rel="stylesheet" type="text/css"/>
+<title>Adlibssr.binsearch</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Adlibssr.binsearch</h1>
+
+<div class="code">
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssreflect</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrbool</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrfun</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.eqtype</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrnat</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.seq</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="library">MathComp.path</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Adlibssr.btree</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Set Implicit Arguments</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab1"></a><h2 class="section">Additional Lemmas for <span class="inlinecode"><span class="id" type="var">sorted</span></span></h2>
+
+ 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" type="keyword">Section</span> <a name="SortedLemma"><span class="id" type="section">SortedLemma</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Variables</span> (<a name="SortedLemma.T"><span class="id" type="variable">T</span></a>: <span class="id" type="abbreviation">eqType</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a name="SortedLemma.ordb"><span class="id" type="variable">ordb</span></a>: <span class="id" type="definition">rel</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.T"><span class="id" type="variable">T</span></a>).<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Hypothesis</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a name="SortedLemma.ordb_transitive"><span class="id" type="variable">ordb_transitive</span></a>: <span class="id" type="definition">transitive</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Implicit</span> <span class="id" type="keyword">Type</span> (<span class="id" type="var">s</span>: <span class="id" type="abbreviation">seq</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.T"><span class="id" type="variable">T</span></a>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="sorted_consn"><span class="id" type="lemma">sorted_consn</span></a> <span class="id" type="var">x</span> <span class="id" type="var">y</span> <span class="id" type="var">s</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> <a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a> <a class="idref" href="Adlibssr.binsearch.html#y"><span class="id" type="variable">y</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<a class="idref" href="Adlibssr.binsearch.html#y"><span class="id" type="variable">y</span></a> <span class="id" type="notation">::</span> <a class="idref" href="Adlibssr.binsearch.html#s"><span class="id" type="variable">s</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<span class="id" type="notation">[::</span> <a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a> <span class="id" type="notation">,</span> <a class="idref" href="Adlibssr.binsearch.html#y"><span class="id" type="variable">y</span></a> <span class="id" type="notation">&amp;</span> <a class="idref" href="Adlibssr.binsearch.html#s"><span class="id" type="variable">s</span></a><span class="id" type="notation">]</span>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="sorted_cons1"><span class="id" type="lemma">sorted_cons1</span></a> <span class="id" type="var">x</span> <span class="id" type="var">s</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a> <span class="id" type="notation">::</span> <a class="idref" href="Adlibssr.binsearch.html#s"><span class="id" type="variable">s</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">seq.all</span> (<a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> <a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a>) <a class="idref" href="Adlibssr.binsearch.html#s"><span class="id" type="variable">s</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> <a class="idref" href="Adlibssr.binsearch.html#s"><span class="id" type="variable">s</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="sorted_rcons"><span class="id" type="lemma">sorted_rcons</span></a> <span class="id" type="var">s</span> <span class="id" type="var">x</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<span class="id" type="definition">rcons</span> <a class="idref" href="Adlibssr.binsearch.html#s"><span class="id" type="variable">s</span></a> <a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a>  <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">seq.all</span> (<a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a><span class="id" type="notation">^~</span><a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a>) <a class="idref" href="Adlibssr.binsearch.html#s"><span class="id" type="variable">s</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> <a class="idref" href="Adlibssr.binsearch.html#s"><span class="id" type="variable">s</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="sorted_cat"><span class="id" type="lemma">sorted_cat</span></a> <span class="id" type="var">x</span> <span class="id" type="var">s1</span> <span class="id" type="var">s2</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a> <span class="id" type="notation">::</span> <a class="idref" href="Adlibssr.binsearch.html#s1"><span class="id" type="variable">s1</span></a> <span class="id" type="notation">++</span> <a class="idref" href="Adlibssr.binsearch.html#s2"><span class="id" type="variable">s2</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a><span class="id" type="notation">::</span><a class="idref" href="Adlibssr.binsearch.html#s1"><span class="id" type="variable">s1</span></a>)<a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> <a class="idref" href="Adlibssr.binsearch.html#s2"><span class="id" type="variable">s2</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">seq.all</span> (<a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<span class="id" type="definition">last</span> <a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a> <a class="idref" href="Adlibssr.binsearch.html#s1"><span class="id" type="variable">s1</span></a>)) <a class="idref" href="Adlibssr.binsearch.html#s2"><span class="id" type="variable">s2</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="sorted_cat_cons"><span class="id" type="lemma">sorted_cat_cons</span></a> <span class="id" type="var">s1</span> <span class="id" type="var">x</span> <span class="id" type="var">s2</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<a class="idref" href="Adlibssr.binsearch.html#s1"><span class="id" type="variable">s1</span></a> <span class="id" type="notation">++</span> <a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a> <span class="id" type="notation">::</span> <a class="idref" href="Adlibssr.binsearch.html#s2"><span class="id" type="variable">s2</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<span class="id" type="definition">rcons</span> <a class="idref" href="Adlibssr.binsearch.html#s1"><span class="id" type="variable">s1</span></a> <a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a>)<a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma.ordb"><span class="id" type="variable">ordb</span></a> (<a class="idref" href="Adlibssr.binsearch.html#x"><span class="id" type="variable">x</span></a><span class="id" type="notation">::</span><a class="idref" href="Adlibssr.binsearch.html#s2"><span class="id" type="variable">s2</span></a>)<a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">End</span> <a class="idref" href="Adlibssr.binsearch.html#SortedLemma"><span class="id" type="section">SortedLemma</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab2"></a><h2 class="section">Binary Search Tree</h2>
+
+ 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" type="keyword">Section</span> <a name="BinarySearchTree"><span class="id" type="section">BinarySearchTree</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Variables</span> (<a name="BinarySearchTree.T"><span class="id" type="variable">T</span></a>: <span class="id" type="abbreviation">eqType</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a name="BinarySearchTree.ordb"><span class="id" type="variable">ordb</span></a>: <span class="id" type="definition">rel</span> <a class="idref" href="Adlibssr.binsearch.html#BinarySearchTree.T"><span class="id" type="variable">T</span></a>).<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Hypothesis</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a name="BinarySearchTree.ordb_transitive"><span class="id" type="variable">ordb_transitive</span></a>: <span class="id" type="definition">transitive</span> <a class="idref" href="Adlibssr.binsearch.html#BinarySearchTree.ordb"><span class="id" type="variable">ordb</span></a>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Implicit</span> <span class="id" type="keyword">Type</span> (<span class="id" type="var">t</span>: <span class="id" type="inductive">btree</span> <a class="idref" href="Adlibssr.binsearch.html#BinarySearchTree.T"><span class="id" type="variable">T</span></a>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Fixpoint</span> <a name="bst"><span class="id" type="definition">bst</span></a> <span class="id" type="var">t</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#bool"><span class="id" type="inductive">bool</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">if</span> <a class="idref" href="Adlibssr.binsearch.html#t"><span class="id" type="variable">t</span></a> <span class="id" type="var">is</span> <span class="id" type="var">tl</span> <span class="id" type="notation">-&lt;</span> <span class="id" type="var">x</span> <span class="id" type="notation">&gt;-</span> <span class="id" type="var">tr</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">then</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binsearch.html#bst"><span class="id" type="definition">bst</span></a> <span class="id" type="var">tl</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">all</span> (<a class="idref" href="Adlibssr.binsearch.html#BinarySearchTree.ordb"><span class="id" type="variable">ordb</span></a> <span class="id" type="notation">^~</span> <span class="id" type="var">x</span>) <span class="id" type="var">tl</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binsearch.html#bst"><span class="id" type="definition">bst</span></a> <span class="id" type="var">tr</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><span class="id" type="definition">all</span> (<a class="idref" href="Adlibssr.binsearch.html#BinarySearchTree.ordb"><span class="id" type="variable">ordb</span></a> <span class="id" type="var">x</span>) <span class="id" type="var">tr</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">else</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#true"><span class="id" type="constructor">true</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="sorted_bst"><span class="id" type="lemma">sorted_bst</span></a> <span class="id" type="var">t</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="definition">sorted</span> <a class="idref" href="Adlibssr.binsearch.html#BinarySearchTree.ordb"><span class="id" type="variable">ordb</span></a> (<span class="id" type="definition">flatten</span> <a class="idref" href="Adlibssr.binsearch.html#t"><span class="id" type="variable">t</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Adlibssr.binsearch.html#bst"><span class="id" type="definition">bst</span></a> <a class="idref" href="Adlibssr.binsearch.html#t"><span class="id" type="variable">t</span></a>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" type="keyword">End</span> <a class="idref" href="Adlibssr.binsearch.html#BinarySearchTree"><span class="id" type="section">BinarySearchTree</span></a>.<br/>
+
+<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
