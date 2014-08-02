@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/2 13:14:20> *)
+(* Time-stamp: <2014/8/2 13:15:36> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -176,6 +176,7 @@ Section BinarySearchTree.
 
     Lemma bst_search a t:
       bst t -> (a \in t) = (search a t).
+    Proof.
       move=> Hbst.
       case Hin: (a \in t).
       - by apply esym; apply bst_search_aux; apply/andP.
