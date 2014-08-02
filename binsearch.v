@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/2 12:37:10> *)
+(* Time-stamp: <2014/8/2 13:14:20> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -141,6 +141,51 @@ Section BinarySearchTree.
     apply andbC.
   Qed.
 
+
+
+  Section Operations.
+
+    Hypothesis
+      (ordb_total: total ordb)
+      (ordb_antisym: antisymmetric ordb).
+    
+    Fixpoint search a t: bool :=
+      if t is tl -< x >- tr
+      then if a == x then true
+           else if ordb a x then search a tl else search a tr
+      else false.
+
+    Lemma bst_search_aux a t:
+      (a \in t) && (bst t) -> search a t.
+    Proof.
+      elim: t => [//= |/= x tl IHl tr IHr].
+      rewrite in_bnode.
+      case: (a =P x) => [<- | Hneq] //=.
+      rewrite -!andbA.
+      move=> /andP
+              [/orP [Hinl | Hinr]
+                /and4P [Hbstl /allP Halll Hbstr /allP Hallr]].
+      - by rewrite Halll //; apply IHl; apply/andP.
+      - move: (Hallr _ Hinr) => Hord.
+        have: ~~ordb a x.
+        + apply/negP => Hord'; apply Hneq.
+          by apply ordb_antisym; apply /andP.
+        + by move=> /negbTE->; apply IHr; apply/andP.
+    Qed.
+
+
+    Lemma bst_search a t:
+      bst t -> (a \in t) = (search a t).
+      move=> Hbst.
+      case Hin: (a \in t).
+      - by apply esym; apply bst_search_aux; apply/andP.
+      - move: {Hbst} Hin; elim: t => [//=|/= x tl IHl tr IHr].
+        rewrite in_bnode.
+        case: (a =P x) => [Heq | Hneq] //=.
+        move/negbT; rewrite negb_or =>/andP [/negbTE/IHl<- /negbTE/IHr<-].
+        by rewrite if_same.
+    Qed.    
+    
 (* In Progress... *)
 
 End BinarySearchTree.
