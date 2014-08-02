@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/1 23:34:34> *)
+(* Time-stamp: <2014/8/2 9:50:29> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -14,8 +14,8 @@ Require Import
   Ssreflect.ssrnat.
 
 Set Implicit Arguments.
-(* Unset Strict Implicit. *)
-(* Unset Printing Implicit Defensive. *)
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
 
 (**
  ** Definitions of Type of Binary-tree *)
@@ -571,25 +571,28 @@ Section EqBtree.
 
 
   (* Uniqueness *)
-  Fixpoint relative_uniq t t': bool :=
+  Fixpoint uniq t: bool :=
     if t is tl -< x >- tr
-    then (x \notin t')
-           && (relative_uniq tl (t' -< x >- tr))
-           && (relative_uniq tr (tl -< x >- tr))
+    then (x \notin tl) && (uniq tl)
+           && (x \notin tr) && (uniq tr)
+           && (all (negb \o mem tr) tl)
+           && (all (negb \o mem tl) tr)
     else true.
 
-  Definition uniq t: bool := relative_uniq t #.
-  
-  Lemma revtree_relative_uniq t t':
-    relative_uniq (revtree t) t' = relative_uniq t t'.
-  Proof.
-    Abort.
-    (* elim: t t' => [//= | /= x tl IHl tr IHr] t'. *)
-  
   Lemma count_uniq_mem t a:
     uniq t -> count_mem a t = (a \in t).
   Proof.
-    Abort.
+    elim: t => [//= | /= x tl IHl tr IHr].
+    rewrite -4!andbA.
+    move=> /and4P [/negbTE Hninl /IHl->{IHl}
+                   /negbTE Hninr /and3P [/IHr->{IHr} Hrl Hlr]].
+    rewrite in_bnode [x == a]eq_sym; case: eqP => [-> | Hneq] /=;
+      first by rewrite Hninl Hninr //=.
+    rewrite add0n.
+    case Haninl: (a \in tl) => //=.
+    move: Hrl => /allP H.
+    move: (H a Haninl) => /= /negbTE -> //=.
+  Qed.
 
 End EqBtree.
 Definition inE := (mem_bnode1, in_bnode, inE).
