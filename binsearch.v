@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/2 13:16:11> *)
+(* Time-stamp: <2014/8/3 21:49:56> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -114,6 +114,7 @@ End SortedLemma.
  ** Binary Search Tree 
  *)
 
+
 Section BinarySearchTree.
 
   Variables (T: eqType)
@@ -186,6 +187,42 @@ Section BinarySearchTree.
         move/negbT; rewrite negb_or =>/andP [/negbTE/IHl<- /negbTE/IHr<-].
         by rewrite if_same.
     Qed.    
+
+
+    Fixpoint insert a t: btree T :=
+      if t is tl -< x >- tr
+      then if ordb a x
+           then (insert a tl) -< x >- tr
+           else tl -< x >- (insert a tr)
+      else #-< a >-#.
+
+    Lemma mem_insert a b t:
+      b \in (insert a t) = (b == a) || (b \in t).
+    Proof.
+      elim: t => [//=|/= x tl IHl tr IHr].
+      case: (ordb a x) => /=.
+      - by rewrite !in_bnode IHl orbCA !orbA.
+      - by rewrite !in_bnode IHr orbCA !orbA.
+    Qed.
+
+    Lemma bst_insert a t:
+      bst t -> bst (insert a t).
+    Proof.
+      elim: t => [//=|/= x tl IHl tr IHr].
+      rewrite -!andbA => /and4P [Hbstl Halll Hbstr Hallr].
+      case Hord: (ordb a x) => /=; rewrite -!andbA; apply/and4P.
+      - repeat split; move=>//=; first by apply IHl.
+        apply/allP=> y Hin.
+        move: Hin; rewrite mem_insert => /orP [/eqP-> | Hin] //=.
+        by move: Halll => /allP H; apply H.
+      - repeat split; move=>//=; first by apply IHr.
+        apply/allP=> y Hin.
+        move: Hin; rewrite mem_insert => /orP [/eqP-> | Hin] //=.
+        + move: (ordb_total a x) => /orP [H | H] //=.
+            by rewrite Hord in H.
+        + by move: Hallr => /allP H; apply H.
+    Qed.
+
     
 (* In Progress... *)
 
