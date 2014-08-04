@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/2 10:1:27> *)
+(* Time-stamp: <2014/8/4 18:9:23> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -123,7 +123,6 @@ Section BinaryTree.
     elim: t => [//= | x /= tl IHl tr IHr].
     by rewrite rev_cat rev_cons cat_rcons IHl IHr.
   Qed.
-
 
   Fixpoint flatten_m t : seq T :=
     if t is tl -< x >- tr
@@ -419,7 +418,6 @@ Section EqBtree.
     exact: predU1l.
   Qed.
 
-
   Section Preds.
 
     Variable (p: pred T).
@@ -507,7 +505,22 @@ Section EqBtree.
       by move=> Heq ; rewrite 2!has_count eq_in_count.
     Qed.
 
+    
+    Lemma sub_all:
+      subpred p1 p2 ->
+      forall t, all p1 t -> all p2 t.
+    Proof.
+      move=> Hsub; elim=> [//=|/= x tl IHl tr IHr].
+      rewrite -!andbA.
+      move=> /and3P [Hp Hal Har].
+      apply/and3P; repeat split; first by apply Hsub.
+      - by apply IHl.
+      - by apply IHr.
+    Qed.
+
   End EqIn.
+
+  
     
   (* Locate "=i". *)
   (* Notation            Scope      *)
@@ -569,6 +582,12 @@ Section EqBtree.
       by rewrite mem_cat in_cons in_bnode IHl IHr orbCA orbA.
   Qed.
 
+  Lemma bleaf_flatten_nil t:
+    (t == #) = (flatten t == [::]).
+  Proof.
+    case: t => //= x tl tr.
+    case: (flatten tl) => //=.
+  Qed.
 
   (* Uniqueness *)
   Fixpoint uniq t: bool :=
@@ -594,5 +613,157 @@ Section EqBtree.
     move: (H a Haninl) => /= /negbTE -> //=.
   Qed.
 
+  
+  (* lend & rend *)
+      (* Temp *)
+    Fixpoint lend a t: T :=
+      if t is tl -< x >- tr
+      then lend x tl
+      else a.
+      
+    Fixpoint rend t a: T :=
+      if t is tl -< x >- tr
+      then rend tr x
+      else a.
+
+    Lemma lend_rev_rend a t:
+      lend a t = rend (revtree t) a.
+    Proof.
+      by elim: t a => [//=|/= x tl IHl tr ?] a; rewrite IHl.
+    Qed.
+
+    Lemma mem_lend a t:
+      (lend a t == a) || (lend a t \in t).
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr ?] a.
+      - by apply/orP; left.
+      - apply/orP; right.
+        rewrite in_bnode; apply/orP; left; apply/orP.
+        move: (IHl x) => /orP [/eqP-> | Hin]; by [left | right].
+    Qed.
+
+    Lemma mem_rend t a:
+      (rend t a == a) || (rend t a \in t).
+    Proof.
+      elim: t a => [//=|/= x tl ? tr IHr] a.
+      - by apply/orP; left.
+      - apply/orP; right.
+        rewrite in_bnode orbAC; apply/orP; left; apply/orP.
+        move: (IHr x) => /orP [/eqP-> | Hin]; by [left | right].
+    Qed.
+
+    (* temp *)
+    Implicit Type (s: seq T).
+
+    Notation rhead s a := (last a s).
+    
+    Fixpoint rbehead s: seq T :=
+      if s is x :: s'
+      then if s' is [::] then [::]
+           else x :: rbehead s'
+      else [::].
+
+
+    Lemma rbehead_cat_cons s1 x s2:
+      rbehead (s1 ++ x :: s2) = s1 ++ rbehead (x :: s2).
+    Proof.
+      elim: s1 s2 x => [//=|/= h1 s1 IHs] [| h2 s2] x //=.
+      - rewrite cats0; elim: s1 {IHs} h1 => //= h1' s1 IH1 h1. 
+        by rewrite IH1. 
+      - rewrite IHs.
+        elim: s1 {IHs} h1 => //= h1' s1 IH1 h1. 
+    Qed.
+
+    Lemma head_cat_cons a x s1 s2:
+      head a (s1 ++ x :: s2) = head a (rcons s1 x).
+    Proof.
+      move: s1 => [|] //=.
+    Qed.
+    
+    Lemma lend_flatten_head a t:
+      lend a t = head a (flatten t).
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr IHr] a.
+      by rewrite head_cat_cons headI /= IHl.
+    Qed.      
+
+    Lemma rend_flatten_rhead a t:
+      rend t a =  rhead (flatten t) a.
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr IHr] a.
+      by rewrite last_cat /= IHr.
+    Qed.      
+
+
+    Fixpoint lend_remove a t: T * btree T :=
+      if t is tl -< x >- tr
+      then if tl is # then (x, tr)
+           else let (node, t') := lend_remove x tl in
+                (node , t' -< x >- tr)
+      else (a, #).
+
+    Fixpoint rend_remove a t: T * btree T :=
+      if t is tl -< x >- tr
+      then if tr is # then (x, tl)
+           else let (node, t') := rend_remove x tr in
+                (node , tl -< x >- t')
+      else (a, #).
+
+
+    Lemma lend_remove_behead a t:
+      flatten (lend_remove a t).2 = behead (flatten t).
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr ?] _.
+      move: (IHl x) => {IHl}; case (lend_remove x tl) => /= y t.
+      case: tl => //= z tl tr' ->.
+      case: (flatten tl) => //=.
+    Qed.
+
+    Lemma lend_remove_head a t:
+      (lend_remove a t).1 = head a (flatten t).
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr IHr] a.
+      move: (IHl x) => {IHl}; case (lend_remove x tl) => /= y t.
+      case: tl => //= z tl tr' ->.
+      case: (flatten tl) => //=.
+    Qed.
+    
+    Notation "f ^1" := (fun x => (f x.1, x.2)) (at level 3, left associativity).
+    Notation "f ^2" := (fun x => (x.1, f x.2)) (at level 3, left associativity).
+    Lemma lend_remove_head_behead a t:
+      flatten^2 (lend_remove a t) = (head a (flatten t), behead (flatten t)).
+    Proof.
+      by rewrite /= lend_remove_head lend_remove_behead.
+    Qed.
+
+    Lemma rend_remove_rhead a t:
+      (rend_remove a t).1 = rhead (flatten t) a.
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr IHr] a.
+      move: (IHr x) => {IHr}; case (rend_remove x tr) => /= y t ->.
+      case: tr => [/=|/= z tl' tr]; first by rewrite last_cat.
+      by rewrite /= !last_cat /= !last_cat /=.
+    Qed.
+
+    Lemma rend_remove_rbehead a t:
+      flatten (rend_remove a t).2 = rbehead (flatten t).
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr IHr] a.
+      rewrite rbehead_cat_cons.
+      move: (IHr x) => {IHr}; case (rend_remove x tr) => /= y t.
+      case: tr => [/=|/= z tl' tr]; first by rewrite cats0.
+      move=> -> //=.
+      remember (flatten tl' ++ z :: flatten tr) as l.
+      elim: l Heql => //=.
+      case: (flatten tl') => //=.
+    Qed.
+
+    Lemma rend_remove_rhead_rbehead a t:
+      flatten^2 (rend_remove a t) = (rhead (flatten t) a, rbehead (flatten t)).
+    Proof.
+      by rewrite /= rend_remove_rhead rend_remove_rbehead.
+    Qed.
+
 End EqBtree.
+
 Definition inE := (mem_bnode1, in_bnode, inE).
