@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/4 18:24:8> *)
+(* Time-stamp: <2014/8/4 23:1:7> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -133,7 +133,7 @@ Section BinarySearchTree.
     - by apply/orP; right.
   Qed.
   Hint Resolve eordb_transitive.
-  Implicit Type (t: btree T).
+  Implicit Types (t: btree T)(s: seq T).
 
 
   Fixpoint bst t: bool :=
@@ -141,6 +141,11 @@ Section BinarySearchTree.
     then (bst tl) && (all (eordb ^~ x) tl) && (bst tr) && (all (eordb x) tr)
     else true.
 
+  Lemma bst_bnode x tl tr:
+    bst (tl -< x >- tr) = (bst tl) && (all (eordb ^~ x) tl) && (bst tr) && (all (eordb x) tr).
+  Proof.
+    by [].
+  Qed.
 
   Lemma sorted_bst t:
     sorted eordb (flatten t) = bst t.
@@ -349,12 +354,74 @@ Section BinarySearchTree.
         + by apply IHl.
     Qed.      
     
-(* In Progress... *)
 
+    Fixpoint delete a t: btree T :=
+      if t is tl -< x >- tr
+      then if a == x
+           then match tl, tr with
+                  | #, # => #
+                  | c, # | #, c => c
+                  | _, _ =>
+                    let (tl', node) := rend_remove tl a in
+                    tl' -< node >- tr
+                end
+           else if ordb a x
+                then (delete a tl) -< x >- tr
+                else tl -< x >- (delete a tr)
+      else #.
+
+    Lemma bst_lend_remove a t:
+      bst t -> bst (lend_remove a t).2.
+    Proof.
+      rewrite -!sorted_bst lend_remove_behead.
+      remember (flatten t) as l.
+      clear Heql t.
+      case: l => [//=| h l] .
+      by rewrite sorted_cons1 // /= => /andP [Hord Hsorted].
+    Qed.
+
+    Lemma bst_rend_remove t a:
+      bst t -> bst (rend_remove t a).1.
+    Proof.
+      rewrite -!sorted_bst rend_remove_rbehead.
+      remember (flatten t) as l.
+      clear Heql t.
+      elim: l => [//=| h l] .
+      rewrite sorted_cons1 //.
+      elim: l => [//=| h' l IHl].
+      move=> IH /andP [Hall Hsorted].
+      rewrite rbehead_cons sorted_cons1 //.
+      apply /andP; split.
+      - move: Hall => {IHl Hsorted} /seq.allP H.
+        apply /seq.allP => x Hin; apply H.
+        by apply mem_rbehead.
+      - by apply IH.
+    Qed.      
+
+    Lemma bst_delete a t:
+      bst t -> bst (delete a t).
+    Proof.
+      elim: t => [//=|/= x tl IHl tr IHr].
+      rewrite -!andbA => /and4P [Hbstl Hal Hbstr Har].
+      case: (a =P x) => [-> | Hneq].
+      - move: (IHl Hbstl) (IHr Hbstr) => Hbstdl {IHl} Hbstdr {IHr}.
+        move: tl Hbstl Hbstdl Hal => [? ? ?|y tl tr'].
+        + by move: tr Hbstr Hbstdr Har => [|] //.
+        + move: tr Hbstr Hbstdr Har => [|z tl' tr] //.
+          remember (rend_remove (tl -< y >- tr') x) as rrt.
+          destruct rrt.
+          move=> Hbstz ? Hallz Hbsty ? Hall.
+          rewrite bst_bnode.
+          rewrite -andbA -andbA; apply /and4P. 
+    Abort.
+          
+  (* In Progress... *)
+    
   End Operations.
 
 End BinarySearchTree.
 
-(*   Definition tb := ((# -< 1 >- # -< 2 >- #) -< 3 >- (# -< 4 >- #)). *)
+(* Definition tb := ((# -< 1 >- # -< 2 >- (# -< 3 >- #)) -< 4 >- (# -< 5 >- #)). *)
+(* Eval compute in (delete (fun x y => x < y) 4 tb). *)
 (* Eval compute in (rend_remove 6 tb). *)
 (* Eval compute in (lend_remove 0 (lend_remove 0 tb).2). *)
