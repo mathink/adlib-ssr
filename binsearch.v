@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/4 23:1:7> *)
+(* Time-stamp: <2014/8/4 23:35:31> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -415,11 +415,75 @@ Section BinarySearchTree.
           rewrite -andbA -andbA; apply /and4P. 
     Abort.
           
-  (* In Progress... *)
+
+  (* Sorting by using binary-search tree *)
+    Fixpoint btsort_insert s t: btree T :=
+      if s is h :: s' then btsort_insert s' (insert h t) else t.
+
+    Definition btsort s := flatten (btsort_insert s #).
+
+    Lemma btsort_insert_bst s t:
+      bst t -> bst (btsort_insert s t).
+    Proof.
+      elim: s t => [//=|/= h s IHs].
+      by move=> t Hbst; apply IHs; rewrite -bst_insert.
+    Qed.
+
+    Lemma btsort_sorted s:
+      sorted eordb (btsort s).
+    Proof.
+      by rewrite /btsort sorted_bst; apply btsort_insert_bst.
+    Qed.
+
+    Lemma insert_count a t p:
+      count p (insert a t) = p a + count p t.
+    Proof.
+      elim: t a p => [//=|/= x tl IHl tr IHr] a p.
+      case: (ordb a x) => /=.
+      - rewrite addnAC -IHr addnC.
+        by rewrite addnAC -[p x + _]IHr addnCA -IHl addnC.
+      - by rewrite -IHl addnA addnAC -IHr addnC.
+    Qed.
+        
+    Lemma btsort_insert_count s t p:
+        seq.count p s + count p t = count p (btsort_insert s t).
+    Proof.
+      elim: s t p => [//=|/= h s IHs] t p.
+      by rewrite -IHs insert_count addnCA addnA.
+    Qed.      
     
+    Lemma btsort_insert_perm s t:
+      perm_eq (s ++ flatten t) (flatten (btsort_insert s t)).
+    Proof.
+      apply/perm_eqP.
+      move=> p /=.
+      elim: s p => [//=|/= h s IHs] p.
+      by rewrite IHs !flatten_count -!btsort_insert_count insert_count addnCA.
+    Qed.
+
+    Lemma btsort_perm_eq s:
+      perm_eq s (btsort s).
+    Proof.
+      elim: s => [//=|/= h s IHs].
+      rewrite /btsort /=.
+      replace (h :: s) with (flatten (#-<h>-#) ++ s); last by [].
+      apply perm_eq_trans with (s ++ flatten (#-<h>-#)).
+      - by rewrite perm_catC perm_eq_refl.
+      - by rewrite btsort_insert_perm.
+    Qed.
+
+  (* In Progress... *)
+
   End Operations.
 
+
+
 End BinarySearchTree.
+
+
+(* Eval compute in (btsort (fun x y => x < y) [::3;1;4;1;5;9;2;6]). *)
+(* = [:: 1; 1; 2; 3; 4; 5; 6; 9] *)
+(* : seq nat_eqType *)
 
 (* Definition tb := ((# -< 1 >- # -< 2 >- (# -< 3 >- #)) -< 4 >- (# -< 5 >- #)). *)
 (* Eval compute in (delete (fun x y => x < y) 4 tb). *)
