@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/4 23:35:31> *)
+(* Time-stamp: <2014/8/5 22:15:56> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -353,18 +353,28 @@ Section BinarySearchTree.
           by move: Hallh'l => /seq.allP Hallh'l; apply Hallh'l.
         + by apply IHl.
     Qed.      
-    
 
+    Definition lend_merge a tl tr: btree T :=
+      if tl is # then tr
+      else let (tl', node) := rend_remove tl a in
+           tl' -< node >- tr.
+
+    Definition rend_merge tl tr a: btree T :=
+      if tr is # then tl
+      else let (node, tr') := lend_remove a tr in
+           tl -< node >- tr'.
+    
+    Lemma rend_remove_bnode x tl tr a:
+      rend_remove (tl -< x >- tr) a =
+
+    Lemma lend_merge_bnode a x tl t tr t':
+      lend_merge a (tl -< x >- tr) tr' =
+      let (tl', node) := rend_remove tl a in
+      tl' -< node >- tr'
     Fixpoint delete a t: btree T :=
       if t is tl -< x >- tr
       then if a == x
-           then match tl, tr with
-                  | #, # => #
-                  | c, # | #, c => c
-                  | _, _ =>
-                    let (tl', node) := rend_remove tl a in
-                    tl' -< node >- tr
-                end
+           then lend_merge x tl tr
            else if ordb a x
                 then (delete a tl) -< x >- tr
                 else tl -< x >- (delete a tr)
@@ -403,7 +413,14 @@ Section BinarySearchTree.
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr].
       rewrite -!andbA => /and4P [Hbstl Hal Hbstr Har].
-      case: (a =P x) => [-> | Hneq].
+      case: (a =P x) => [Heq | Hneq]; first subst x.
+      - move=> {IHl IHr}.
+        elim: tl Hbstl Hal Hbstr Har => [//=|x tl IHl t IH].
+        move=> Hbstl Hal Hbstr Har.
+        remeb
+
+        
+
       - move: (IHl Hbstl) (IHr Hbstr) => Hbstdl {IHl} Hbstdr {IHr}.
         move: tl Hbstl Hbstdl Hal => [? ? ?|y tl tr'].
         + by move: tr Hbstr Hbstdr Har => [|] //.
@@ -464,7 +481,7 @@ Section BinarySearchTree.
     Lemma btsort_perm_eq s:
       perm_eq s (btsort s).
     Proof.
-      elim: s => [//=|/= h s IHs].
+      case: s => [//=|/= h s].
       rewrite /btsort /=.
       replace (h :: s) with (flatten (#-<h>-#) ++ s); last by [].
       apply perm_eq_trans with (s ++ flatten (#-<h>-#)).
