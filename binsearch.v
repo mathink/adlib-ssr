@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/5 22:15:56> *)
+(* Time-stamp: <2014/8/6 0:21:50> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -18,7 +18,8 @@ Require Import
         MathComp.path.
 
 Require Import
-  Adlibssr.btree.
+  Adlibssr.btree
+  Adlibssr.sorted.
 
 
 (* Implicity *)
@@ -26,88 +27,6 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-
-(**
- ** Additional Lemmas for [sorted]
- *)
-
-Section SortedLemma.
-
-  Variables (T: eqType)
-            (ordb: rel T).
-  Hypothesis
-    (ordb_transitive: transitive ordb).
-
-  Implicit Type (s: seq T).
-
-  Lemma sorted_consn x y s:
-    (ordb x y) && sorted ordb (y :: s) = sorted ordb ([:: x , y & s]).
-  Proof.
-    by [].
-  Qed.
-
-  Lemma sorted_cons1 x s:
-    sorted ordb (x :: s) = (seq.all (ordb x) s) && sorted ordb s.
-  Proof.
-    elim: s x => [//=|/= h s IHs] x.
-    rewrite -andbA; apply andb_id2l => Hord.
-    rewrite IHs andbC andbCA; apply andb_id2l => Hsorted.
-    rewrite -seq.all_predI /=.
-    apply seq.eq_all => y /=.
-    rewrite -{1}[ordb h y]andbT [_ && true]andbC;
-    apply andb_id2r => Hord'; apply esym.
-    by move: Hord' ; apply ordb_transitive.
-  Qed.
-
-  Lemma sorted_rcons s x:
-    sorted ordb (rcons s x) =  (seq.all (ordb^~x) s) && sorted ordb s.
-  Proof.
-    elim: s x => [//=| h s IHs] x.
-    rewrite rcons_cons sorted_cons1
-            /= IHs andbCA andbAC [_&& seq.all _ _]andbC.
-    apply andb_id2l => Hall.
-    rewrite seq.all_rcons -andbA; apply andb_id2l => Hord.
-    by rewrite -sorted_cons1.
-  Qed.
-
-  Lemma sorted_cat x s1 s2:
-    sorted ordb (x :: s1 ++ s2) =
-    (sorted ordb (x::s1)) && (sorted ordb s2)
-    && (seq.all (ordb (last x s1)) s2).
-  Proof.
-    move=> /=.
-    rewrite cat_path -andbA; apply andb_id2l.
-    elim: s1 x => [//=|/= h1 s1 IH1] x => [_ | /andP [Hord Hpath1]].
-    - elim: s2 x => [//= | /= h2 s2 IH2] x.
-      rewrite andbC; apply andb_id2l => Hpath2.
-      rewrite -{1}[ordb x h2]andbT; apply andb_id2l => Hord.
-      rewrite IH2 in Hpath2.
-      move: Hpath2 => /andP [Hsorted Hall].
-      rewrite -Hall; apply seq.eq_in_all.
-      move=> y /= Hin2.
-      have: ordb h2 y; first move: (Hall) => /seq.allP -> //=.
-      move=> Hord2; rewrite Hord2; apply esym.
-      apply ordb_transitive with h2 => //=.
-    - apply IH1 => //=.
-  Qed.
-
-  Lemma sorted_cat_cons s1 x s2:
-    sorted ordb (s1 ++ x :: s2) =
-    (sorted ordb (rcons s1 x)) && (sorted ordb (x::s2)).
-  Proof.
-    elim: s1 s2 x => [//= | h1 s1 IH1] s2 x.
-    rewrite cat_cons sorted_cons1 IH1 rcons_cons [sorted _ (h1 :: _)]sorted_cons1 seq.all_cat seq.all_rcons /= !andbA.
-    apply andb_id2r => Hpath2.
-    apply andb_id2r => Hsorted.
-    rewrite -andbA andbC -andbA; apply andb_id2l => Hord.
-    rewrite andbC -{2}[seq.all _ _]andbT; apply andb_id2l => Hall.
-    apply order_path_min in Hpath2 => //=.
-    apply /seq.allP => y Hin.
-    move: Hpath2 => /seq.allP H; apply ordb_transitive with x => //=.
-    by apply H.
-  Qed.
-
-End SortedLemma.
 
 
 (**
@@ -363,14 +282,7 @@ Section BinarySearchTree.
       if tr is # then tl
       else let (node, tr') := lend_remove a tr in
            tl -< node >- tr'.
-    
-    Lemma rend_remove_bnode x tl tr a:
-      rend_remove (tl -< x >- tr) a =
 
-    Lemma lend_merge_bnode a x tl t tr t':
-      lend_merge a (tl -< x >- tr) tr' =
-      let (tl', node) := rend_remove tl a in
-      tl' -< node >- tr'
     Fixpoint delete a t: btree T :=
       if t is tl -< x >- tr
       then if a == x
@@ -406,32 +318,50 @@ Section BinarySearchTree.
         apply /seq.allP => x Hin; apply H.
         by apply mem_rbehead.
       - by apply IH.
-    Qed.      
+    Qed.
 
+    Lemma mem_rend_remove x t a:
+      x \in (rend_remove t a).1 -> x \in t.
+    Proof.
+      elim: t a => [//=|/= y tl IHl tr IHr] a.
+      move: (IHr y) => {IHl IHr a}.
+      case: tr => [//= ? Hin | z t tr H Hin].
+      - by rewrite in_bnode -orbA orbCA; apply/orP; left.
+      - remember (rend_remove (t -< z >- tr) y).
+        destruct p.
+        rewrite in_bnode -orbA; apply/or3P.
+        move: Hin; rewrite/= in_bnode -orbA => /or3P [/eqP<- | Hin | Hin].
+        + by apply Or31.
+        + by apply Or32.
+        + by apply Or33, H.
+    Qed.
+
+    Lemma bst_lend_merge a tl tr:
+      bst (tl -< a >- tr) ->
+      bst (lend_merge a tl tr).
+    Proof.
+    Admitted.
+
+    Lemma all_delete p a t:
+      all p t -> all p (delete a t).
+    Proof.
+    Admitted.
+      
     Lemma bst_delete a t:
       bst t -> bst (delete a t).
     Proof.
-      elim: t => [//=|/= x tl IHl tr IHr].
-      rewrite -!andbA => /and4P [Hbstl Hal Hbstr Har].
-      case: (a =P x) => [Heq | Hneq]; first subst x.
-      - move=> {IHl IHr}.
-        elim: tl Hbstl Hal Hbstr Har => [//=|x tl IHl t IH].
-        move=> Hbstl Hal Hbstr Har.
-        remeb
-
-        
-
-      - move: (IHl Hbstl) (IHr Hbstr) => Hbstdl {IHl} Hbstdr {IHr}.
-        move: tl Hbstl Hbstdl Hal => [? ? ?|y tl tr'].
-        + by move: tr Hbstr Hbstdr Har => [|] //.
-        + move: tr Hbstr Hbstdr Har => [|z tl' tr] //.
-          remember (rend_remove (tl -< y >- tr') x) as rrt.
-          destruct rrt.
-          move=> Hbstz ? Hallz Hbsty ? Hall.
-          rewrite bst_bnode.
-          rewrite -andbA -andbA; apply /and4P. 
-    Abort.
-          
+      elim: t => [//=| x tl IHl tr IHr].
+      move=> Hbst; move: (Hbst) => /bst_lend_merge H /=.
+      case: (a =P x) => [Heq | Hneq]; first done.
+      move: Hbst => /=; rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
+      case Hord: (ordb a x) => /=.
+      - rewrite -!andbA; apply/and4P; split; try done.
+        + by apply: IHl.
+        + by apply: all_delete.
+      - rewrite -!andbA; apply/and4P; split; try done.
+        + by apply: IHr.
+        + by apply: all_delete.
+    Qed.
 
   (* Sorting by using binary-search tree *)
     Fixpoint btsort_insert s t: btree T :=

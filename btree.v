@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/4 23:1:56> *)
+(* Time-stamp: <2014/8/6 0:23:12> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -614,7 +614,7 @@ Section EqBtree.
   Qed.
 
   
-  (* lend & rend *)
+  (* lend & ren *)
       (* Temp *)
     Fixpoint lend a t: T :=
       if t is tl -< x >- tr

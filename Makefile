@@ -82,6 +82,7 @@ endif
 
 VFILES:=tree.v\
   binsearch.v\
+  sorted.v\
   btree.v
 
 -include $(addsuffix .d,$(VFILES))
