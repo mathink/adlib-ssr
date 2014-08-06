@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/6 22:26:32> *)
+(* Time-stamp: <2014/8/6 22:42:5> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -349,7 +349,7 @@ Section BinarySearchTree.
         + by apply Or33, H.
     Qed.
 
-    Lemma bst_mem_root_r t:
+    Lemma bst_rem_root_r t:
       bst t -> bst (rem_root_r t).
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr].
@@ -372,15 +372,31 @@ Section BinarySearchTree.
     Qed.
 
     Lemma all_delete p a t:
-      all p t -> all p (delete a t).
+       all p t -> all p (delete a t).
     Proof.
-    Admitted.
+      elim: t => [//=|/= x tl IHl tr IHr].
+      case: (a =P x) => [<-{x}|Hneq];
+        rewrite -!andbA => /and3P [Hp Hal Har].
+      - remember (rend_remove tl a).
+        case: p0 Heqp0 => t x Heq /=.
+        rewrite -!andbA; apply/and3P; split; try done.
+        + move: (rend_remove_rend tl a) (mem_rend tl a);
+          rewrite -Heq /= => <- /orP [/eqP->//|Hin].
+          by move: Hal => /allP; apply.
+        + apply/allP => y Hin.
+          move: Hal => /allP; apply.
+          by move: (@mem_rend_remove y tl a); rewrite -Heq; apply.
+      - case: (ordb a x) => /=; rewrite -!andbA;
+          apply/and3P; split; try done.
+        + by apply IHl.
+        + by apply IHr.
+    Qed.
       
     Lemma bst_delete a t:
       bst t -> bst (delete a t).
     Proof.
       elim: t => [//=| x tl IHl tr IHr].
-      move=> Hbst; move: (Hbst) => /bst_lend_merge H /=.
+      move=> Hbst; move: (Hbst) => /bst_rem_root_r H /=.
       case: (a =P x) => [Heq | Hneq]; first done.
       move: Hbst => /=; rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
       case Hord: (ordb a x) => /=.
