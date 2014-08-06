@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/6 22:42:5> *)
+(* Time-stamp: <2014/8/6 23:12:15> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -296,13 +296,13 @@ Section BinarySearchTree.
       else let (tl', node) := rend_remove tl a in
            tl' -< node >- tr.
 
-    Fixpoint delete a t: btree T :=
+    Fixpoint delete_l a t: btree T :=
       if t is tl -< x >- tr
       then if a == x
            then rem_root_r t
            else if ordb a x
-                then (delete a tl) -< x >- tr
-                else tl -< x >- (delete a tr)
+                then (delete_l a tl) -< x >- tr
+                else tl -< x >- (delete_l a tr)
       else #.
 
     Lemma bst_lend_remove a t:
@@ -371,8 +371,8 @@ Section BinarySearchTree.
           * by move: Har => /allP; apply.
     Qed.
 
-    Lemma all_delete p a t:
-       all p t -> all p (delete a t).
+    Lemma all_delete_l p a t:
+       all p t -> all p (delete_l a t).
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr].
       case: (a =P x) => [<-{x}|Hneq];
@@ -392,8 +392,8 @@ Section BinarySearchTree.
         + by apply IHr.
     Qed.
       
-    Lemma bst_delete a t:
-      bst t -> bst (delete a t).
+    Lemma bst_delete_l a t:
+      bst t -> bst (delete_l a t).
     Proof.
       elim: t => [//=| x tl IHl tr IHr].
       move=> Hbst; move: (Hbst) => /bst_rem_root_r H /=.
@@ -402,11 +402,75 @@ Section BinarySearchTree.
       case Hord: (ordb a x) => /=.
       - rewrite -!andbA; apply/and4P; split; try done.
         + by apply: IHl.
-        + by apply: all_delete.
+        + by apply: all_delete_l.
       - rewrite -!andbA; apply/and4P; split; try done.
         + by apply: IHr.
-        + by apply: all_delete.
+        + by apply: all_delete_l.
     Qed.
+
+    
+    (* I want to prove them *)
+    Lemma mem_delete_l x a t:
+      x \in (delete_l a t) -> x \in t.
+    Proof.
+    Admitted.
+
+    Lemma size_delete_l a t:
+      size (delete_l a t) < size t -> a \in t.
+    Proof.
+    Admitted.
+
+
+    Fixpoint delete_r t a: btree T :=
+      if t is tl -< x >- tr
+      then if a == x
+           then rem_root_l t
+           else if ordb a x
+                then (delete_r tl a) -< x >- tr
+                else tl -< x >- (delete_r tr a)
+      else #.
+
+    Lemma mem_lend_remove x a t:
+      x \in (lend_remove a t).2 -> x \in t.
+    Proof.
+    Admitted.
+
+    Lemma bst_rem_root_l t:
+      bst t -> bst (rem_root_l t).
+    Proof.
+    Admitted.
+
+    Lemma all_delete_r p t a:
+       all p t -> all p (delete_r t a).
+    Proof.
+    Admitted.
+
+    Lemma bst_delete_r t a:
+      bst t -> bst (delete_r t a).
+    Proof.
+      elim: t => [//=| x tl IHl tr IHr].
+      move=> Hbst; move: (Hbst) => /bst_rem_root_l H /=.
+      case: (a =P x) => [Heq | Hneq]; first done.
+      move: Hbst => /=; rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
+      case Hord: (ordb a x) => /=.
+      - rewrite -!andbA; apply/and4P; split; try done.
+        + by apply: IHl.
+        + by apply: all_delete_r.
+      - rewrite -!andbA; apply/and4P; split; try done.
+        + by apply: IHr.
+        + by apply: all_delete_r.
+    Qed.
+
+    Lemma mem_delete_r x t a:
+      x \in (delete_r t a) -> x \in t.
+    Proof.
+    Admitted.
+
+    Lemma size_delete_r t a:
+      size (delete_r t a) < size t -> a \in t.
+    Proof.
+    Admitted.
+
 
   (* Sorting by using binary-search tree *)
     Fixpoint btsort_insert s t: btree T :=
