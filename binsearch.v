@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/6 23:12:15> *)
+(* Time-stamp: <2014/8/7 1:17:6> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -76,7 +76,6 @@ Section BinarySearchTree.
     apply andb_id2r => Hbstr.
     by apply andbC.
   Qed.
-
 
 
   Section Operations.
@@ -274,28 +273,6 @@ Section BinarySearchTree.
     Qed.      
 
 
-    Definition rem_root_l t: btree T :=
-      if t is tl -< x >- tr
-      then let (node, tr') := lend_remove x tr in
-           tl -< node >- tr'
-      else #.
-
-    Definition lend_merge a tl tr: btree T :=
-      if tr is # then tl
-      else let (node, tr') := lend_remove a tr in
-           tl -< node >- tr'.
-    
-    Definition rem_root_r t: btree T :=
-      if t is tl -< x >- tr
-      then let (tl', node) := rend_remove tl x in
-           tl' -< node >- tr
-      else #.
-
-    Definition rend_merge tl tr a: btree T :=
-      if tl is # then tr
-      else let (tl', node) := rend_remove tl a in
-           tl' -< node >- tr.
-
     Fixpoint delete_l a t: btree T :=
       if t is tl -< x >- tr
       then if a == x
@@ -333,22 +310,6 @@ Section BinarySearchTree.
       - by apply IH.
     Qed.
 
-    Lemma mem_rend_remove x t a:
-      x \in (rend_remove t a).1 -> x \in t.
-    Proof.
-      elim: t a => [//=|/= y tl IHl tr IHr] a.
-      move: (IHr y) => {IHl IHr a}.
-      case: tr => [//= ? Hin | z t tr H Hin].
-      - by rewrite in_bnode -orbA orbCA; apply/orP; left.
-      - remember (rend_remove (t -< z >- tr) y).
-        destruct p.
-        rewrite in_bnode -orbA; apply/or3P.
-        move: Hin; rewrite/= in_bnode -orbA => /or3P [/eqP<- | Hin | Hin].
-        + by apply Or31.
-        + by apply Or32.
-        + by apply Or33, H.
-    Qed.
-
     Lemma bst_rem_root_r t:
       bst t -> bst (rem_root_r t).
     Proof.
@@ -361,7 +322,7 @@ Section BinarySearchTree.
       - apply/allP => y Hin.
         move: (rend_remove_rend tl x); rewrite -Heq => /= ->.
         move: (bst_rend Hal Hbl) => /allP; apply.
-        by move: (@mem_rend_remove y tl x); rewrite -Heq; apply.
+        by move: (@mem_rend_remove _ y tl x); rewrite -Heq; apply.
       - apply/allP => y Hin.
         move: (rend_remove_rend tl x) (mem_rend tl x);
           rewrite -Heq => /= <- /orP [/eqP->|Hin'].
@@ -385,7 +346,7 @@ Section BinarySearchTree.
           by move: Hal => /allP; apply.
         + apply/allP => y Hin.
           move: Hal => /allP; apply.
-          by move: (@mem_rend_remove y tl a); rewrite -Heq; apply.
+          by move: (@mem_rend_remove _ y tl a); rewrite -Heq; apply.
       - case: (ordb a x) => /=; rewrite -!andbA;
           apply/and3P; split; try done.
         + by apply IHl.
