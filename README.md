@@ -19,6 +19,10 @@ Type of binary tree and some utility functions are defined.
 
 And some properties are proved (in progress)
 
+## Binary-Search-tree (binsearch.v)
+
+(will be written)
+
 ## Tree & Forest (tree.v)
 
 Types of tree and forest are defined by using mutual inductive definition.

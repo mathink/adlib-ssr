@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/4 23:35:31> *)
+(* Time-stamp: <2014/8/6 0:21:50> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -272,18 +272,21 @@ Section BinarySearchTree.
           by move: Hallh'l => /seq.allP Hallh'l; apply Hallh'l.
         + by apply IHl.
     Qed.      
-    
+
+    Definition lend_merge a tl tr: btree T :=
+      if tl is # then tr
+      else let (tl', node) := rend_remove tl a in
+           tl' -< node >- tr.
+
+    Definition rend_merge tl tr a: btree T :=
+      if tr is # then tl
+      else let (node, tr') := lend_remove a tr in
+           tl -< node >- tr'.
 
     Fixpoint delete a t: btree T :=
       if t is tl -< x >- tr
       then if a == x
-           then match tl, tr with
-                  | #, # => #
-                  | c, # | #, c => c
-                  | _, _ =>
-                    let (tl', node) := rend_remove tl a in
-                    tl' -< node >- tr
-                end
+           then lend_merge x tl tr
            else if ordb a x
                 then (delete a tl) -< x >- tr
                 else tl -< x >- (delete a tr)
@@ -315,25 +318,50 @@ Section BinarySearchTree.
         apply /seq.allP => x Hin; apply H.
         by apply mem_rbehead.
       - by apply IH.
-    Qed.      
+    Qed.
 
+    Lemma mem_rend_remove x t a:
+      x \in (rend_remove t a).1 -> x \in t.
+    Proof.
+      elim: t a => [//=|/= y tl IHl tr IHr] a.
+      move: (IHr y) => {IHl IHr a}.
+      case: tr => [//= ? Hin | z t tr H Hin].
+      - by rewrite in_bnode -orbA orbCA; apply/orP; left.
+      - remember (rend_remove (t -< z >- tr) y).
+        destruct p.
+        rewrite in_bnode -orbA; apply/or3P.
+        move: Hin; rewrite/= in_bnode -orbA => /or3P [/eqP<- | Hin | Hin].
+        + by apply Or31.
+        + by apply Or32.
+        + by apply Or33, H.
+    Qed.
+
+    Lemma bst_lend_merge a tl tr:
+      bst (tl -< a >- tr) ->
+      bst (lend_merge a tl tr).
+    Proof.
+    Admitted.
+
+    Lemma all_delete p a t:
+      all p t -> all p (delete a t).
+    Proof.
+    Admitted.
+      
     Lemma bst_delete a t:
       bst t -> bst (delete a t).
     Proof.
-      elim: t => [//=|/= x tl IHl tr IHr].
-      rewrite -!andbA => /and4P [Hbstl Hal Hbstr Har].
-      case: (a =P x) => [-> | Hneq].
-      - move: (IHl Hbstl) (IHr Hbstr) => Hbstdl {IHl} Hbstdr {IHr}.
-        move: tl Hbstl Hbstdl Hal => [? ? ?|y tl tr'].
-        + by move: tr Hbstr Hbstdr Har => [|] //.
-        + move: tr Hbstr Hbstdr Har => [|z tl' tr] //.
-          remember (rend_remove (tl -< y >- tr') x) as rrt.
-          destruct rrt.
-          move=> Hbstz ? Hallz Hbsty ? Hall.
-          rewrite bst_bnode.
-          rewrite -andbA -andbA; apply /and4P. 
-    Abort.
-          
+      elim: t => [//=| x tl IHl tr IHr].
+      move=> Hbst; move: (Hbst) => /bst_lend_merge H /=.
+      case: (a =P x) => [Heq | Hneq]; first done.
+      move: Hbst => /=; rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
+      case Hord: (ordb a x) => /=.
+      - rewrite -!andbA; apply/and4P; split; try done.
+        + by apply: IHl.
+        + by apply: all_delete.
+      - rewrite -!andbA; apply/and4P; split; try done.
+        + by apply: IHr.
+        + by apply: all_delete.
+    Qed.
 
   (* Sorting by using binary-search tree *)
     Fixpoint btsort_insert s t: btree T :=
@@ -383,7 +411,7 @@ Section BinarySearchTree.
     Lemma btsort_perm_eq s:
       perm_eq s (btsort s).
     Proof.
-      elim: s => [//=|/= h s IHs].
+      case: s => [//=|/= h s].
       rewrite /btsort /=.
       replace (h :: s) with (flatten (#-<h>-#) ++ s); last by [].
       apply perm_eq_trans with (s ++ flatten (#-<h>-#)).
