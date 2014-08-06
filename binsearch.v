@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/6 0:21:50> *)
+(* Time-stamp: <2014/8/6 22:26:32> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -273,20 +273,33 @@ Section BinarySearchTree.
         + by apply IHl.
     Qed.      
 
+
+    Definition rem_root_l t: btree T :=
+      if t is tl -< x >- tr
+      then let (node, tr') := lend_remove x tr in
+           tl -< node >- tr'
+      else #.
+
     Definition lend_merge a tl tr: btree T :=
+      if tr is # then tl
+      else let (node, tr') := lend_remove a tr in
+           tl -< node >- tr'.
+    
+    Definition rem_root_r t: btree T :=
+      if t is tl -< x >- tr
+      then let (tl', node) := rend_remove tl x in
+           tl' -< node >- tr
+      else #.
+
+    Definition rend_merge tl tr a: btree T :=
       if tl is # then tr
       else let (tl', node) := rend_remove tl a in
            tl' -< node >- tr.
 
-    Definition rend_merge tl tr a: btree T :=
-      if tr is # then tl
-      else let (node, tr') := lend_remove a tr in
-           tl -< node >- tr'.
-
     Fixpoint delete a t: btree T :=
       if t is tl -< x >- tr
       then if a == x
-           then lend_merge x tl tr
+           then rem_root_r t
            else if ordb a x
                 then (delete a tl) -< x >- tr
                 else tl -< x >- (delete a tr)
@@ -336,11 +349,27 @@ Section BinarySearchTree.
         + by apply Or33, H.
     Qed.
 
-    Lemma bst_lend_merge a tl tr:
-      bst (tl -< a >- tr) ->
-      bst (lend_merge a tl tr).
+    Lemma bst_mem_root_r t:
+      bst t -> bst (rem_root_r t).
     Proof.
-    Admitted.
+      elim: t => [//=|/= x tl IHl tr IHr].
+      rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
+      remember (rend_remove tl x).
+      case: p Heqp => t node Heq /=.
+      rewrite -!andbA; apply/and4P; split; try done.
+      - by move: (bst_rend_remove x Hbl); rewrite -Heq.
+      - apply/allP => y Hin.
+        move: (rend_remove_rend tl x); rewrite -Heq => /= ->.
+        move: (bst_rend Hal Hbl) => /allP; apply.
+        by move: (@mem_rend_remove y tl x); rewrite -Heq; apply.
+      - apply/allP => y Hin.
+        move: (rend_remove_rend tl x) (mem_rend tl x);
+          rewrite -Heq => /= <- /orP [/eqP->|Hin'].
+        + by move: Har => /allP; apply.
+        + apply eordb_transitive with x.
+          * by move: Hal => /allP; apply.
+          * by move: Har => /allP; apply.
+    Qed.
 
     Lemma all_delete p a t:
       all p t -> all p (delete a t).
