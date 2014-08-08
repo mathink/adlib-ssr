@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/9 0:15:24> *)
+(* Time-stamp: <2014/8/9 0:50:49> *)
 (*
   binheap.v 
   - mathink : Author
@@ -76,6 +76,10 @@ Section Heap.
       apply/allP=> y Hin; apply ordb_transitive with x => //;
        [move: Hbl | move: Hbr]; move=>/allP; apply.
   Qed.
+
+
+(* TODO: shape property *)
+  
 
 (* W.I.P. *)
 End Heap.
