@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/8 0:5:0> *)
+(* Time-stamp: <2014/8/8 23:2:40> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -79,6 +79,13 @@ Section BinarySearchTree.
     bst (tl -< x >- tr) = (bst tl) && (all [<= x] tl) && (bst tr) && (all [=> x] tr).
   Proof.
     by [].
+  Qed.
+
+  Lemma all_revtree p t:
+    all p (revtree t) = all p t.
+  Proof.
+    elim: t => [//=|/= x tl -> tr ->].
+    by rewrite andbAC.
   Qed.
 
   Lemma sorted_bst t:
@@ -382,13 +389,41 @@ Section BinarySearchTree.
     Lemma mem_delete_l x a t:
       x \in (delete_l a t) -> x \in t.
     Proof.
-    Admitted.
+      elim: t x => [//=| y tl IHl tr IHr /=] x.
+      case: (a =P y) => [<-{y} | /eqP Hneq].
+      - remember (rend_remove tl a).
+        move: p Heqp => [tl' node] Heq.
+        rewrite in_bnode -orbA => /or3P [/eqP-> | Hin | Hin].
+        + move: (mem_rend tl a); rewrite -rend_remove_rend -Heq /=.
+          by move=> H; rewrite in_bnode; apply/orP; left.
+        + rewrite in_bnode -orbA; apply/or3P; apply Or32.
+          by move: (@mem_rend_remove _ x tl a); rewrite -Heq /=; apply.
+        + by rewrite in_bnode -orbA; apply/or3P; apply Or33.
+      - rewrite /strict_ordb Hneq andbT.
+        case Hord: (a <= y); 
+          rewrite !in_bnode -!orbA => /or3P [Heq | Hin | Hin]; apply/or3P;
+            try (by apply Or33); try (by apply Or32); try (by apply Or31).
+        + by apply Or32; apply: IHl.
+        + by apply Or33; apply: IHr.
+    Qed.
+
+
+    Lemma delete_l_eq a t:
+      (a \notin t) -> (delete_l a t == t).
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr IHr] a.
+      - rewrite in_bnode !negb_or -!andbA
+        => /and3P [/negbTE-> /IHl/eqP-> /IHr/eqP->].
+        by rewrite if_same.
+    Qed.
 
     Lemma size_delete_l a t:
       (size (delete_l a t) < size t)%nat -> a \in t.
     Proof.
-    Admitted.
-
+      apply contraTT => Hnin.
+      move: (delete_l_eq Hnin) => /eqP->.
+      by rewrite ltnn.
+    Qed.
 
     Fixpoint delete_r t a: btree T :=
       if t is tl -< x >- tr
@@ -402,17 +437,54 @@ Section BinarySearchTree.
     Lemma mem_lend_remove x a t:
       x \in (lend_remove a t).2 -> x \in t.
     Proof.
-    Admitted.
-
-    Lemma bst_rem_root_l t:
-      bst t -> bst (rem_root_l t).
-    Proof.
-    Admitted.
+      rewrite
+      -{1}[t]revtree_idempotent
+          lend_remove_revtree swap_app_fst /= mem_revtree.
+      by move=> /mem_rend_remove Hin; rewrite -mem_revtree.
+    Qed.      
 
     Lemma all_delete_r p t a:
        all p t -> all p (delete_r t a).
     Proof.
-    Admitted.
+      elim: t => [//=|/= x tl IHl tr IHr].
+      case: (a =P x) => [<-{x}|Hneq];
+        rewrite -!andbA => /and3P [Hp Hal Har].
+      - remember (lend_remove a tr).
+        case: p0 Heqp0 => t x Heq /=.
+        rewrite -!andbA; apply/and3P; split; try done.
+        + move: (lend_remove_lend a tr) (mem_lend a tr);
+          rewrite -Heq /= => <- /orP [/eqP->//|Hin].
+          by move: Har => /allP; apply.
+        + apply/allP => y Hin.
+          move: Har => /allP; apply.
+          by move: (@mem_lend_remove y a tr); rewrite -Heq; apply.
+      - case: (a < x) => /=; rewrite -!andbA;
+          apply/and3P; split; try done.
+        + by apply IHl.
+        + by apply IHr.
+    Qed.
+
+    Lemma bst_rem_root_l t:
+      bst t -> bst (rem_root_l t).
+    Proof.
+      elim: t => [//=|/= x tl IHl tr IHr].
+      rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
+      remember (lend_remove x tr).
+      case: p Heqp => node t Heq /=.
+      rewrite -!andbA; apply/and4P; split; try done.
+      - apply/allP => y Hin.
+        move: (lend_remove_lend x tr) (mem_lend x tr);
+          rewrite -Heq => /= <- /orP [/eqP->|Hin'].
+        + by move: Hal => /allP; apply.
+        + apply ordb_transitive with x.
+          * by move: Hal => /allP; apply.
+          * by move: Har => /allP; apply.
+      - by move: (bst_lend_remove x Hbr); rewrite -Heq.
+      - apply/allP => y Hin.
+        move: (lend_remove_lend x tr); rewrite -Heq => /= ->.
+        move: (bst_lend Har Hbr) => /allP; apply.
+        by move: (@mem_lend_remove y x tr); rewrite -Heq; apply.
+    Qed.
 
     Lemma bst_delete_r t a:
       bst t -> bst (delete_r t a).
@@ -433,13 +505,40 @@ Section BinarySearchTree.
     Lemma mem_delete_r x t a:
       x \in (delete_r t a) -> x \in t.
     Proof.
-    Admitted.
+      elim: t x => [//=| y tl IHl tr IHr /=] x.
+      case: (a =P y) => [<-{y} | /eqP Hneq].
+      - remember (lend_remove a tr).
+        move: p Heqp => [node tr'] Heq.
+        rewrite in_bnode -orbA => /or3P [/eqP-> | Hin | Hin].
+        + move: (mem_lend a tr); rewrite -lend_remove_lend -Heq /=.
+          by move=> H; rewrite in_bnode -orbAC; apply/orP; left.
+        + by rewrite in_bnode -orbA; apply/or3P; apply Or32.
+        + rewrite in_bnode -orbA; apply/or3P; apply Or33.
+          by move: (@mem_lend_remove x a tr); rewrite -Heq /=; apply.
+      - rewrite /strict_ordb Hneq andbT.
+        case Hord: (a <= y); 
+          rewrite !in_bnode -!orbA => /or3P [Heq | Hin | Hin]; apply/or3P;
+            try (by apply Or33); try (by apply Or32); try (by apply Or31).
+        + by apply Or32; apply: IHl.
+        + by apply Or33; apply: IHr.
+    Qed.
+
+    Lemma delete_r_eq t a:
+      (a \notin t) -> (delete_r t a == t).
+    Proof.
+      elim: t a => [//=|/= x tl IHl tr IHr] a.
+      - rewrite in_bnode !negb_or -!andbA
+        => /and3P [/negbTE-> /IHl/eqP-> /IHr/eqP->].
+        by rewrite if_same.
+    Qed.
 
     Lemma size_delete_r t a:
       (size (delete_r t a) < size t)%nat -> a \in t.
     Proof.
-    Admitted.
-
+      apply contraTT => Hnin.
+      move: (delete_r_eq Hnin) => /eqP->.
+      by rewrite ltnn.
+    Qed.
 
   (* Sorting by using binary-search tree *)
     Fixpoint btsort_insert s t: btree T :=
