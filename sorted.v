@@ -66,7 +66,7 @@ Section SortedLemma.
     by rewrite -sorted_cons1.
   Qed.
 
-  Lemma sorted_cat x s1 s2:
+  Lemma sorted_cons_cat x s1 s2:
     sorted ordb (x :: s1 ++ s2) =
     (sorted ordb (x::s1)) && (sorted ordb s2)
     && (seq.all (ordb (last x s1)) s2).
