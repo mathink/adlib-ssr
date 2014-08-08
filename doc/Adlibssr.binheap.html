@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="coqdoc.css" rel="stylesheet" type="text/css"/>
+<title>Adlibssr.binheap</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Adlibssr.binheap</h1>
+
+<div class="code">
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab1"></a><h2 class="section">Binary Heap Structure</h2>
+
+ 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssreflect</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrbool</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrfun</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.eqtype</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrnat</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.seq</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="library">MathComp.path</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span><br/>
+&nbsp;&nbsp;<a class="idref" href="Adlibssr.btree.html#"><span class="id" type="library">Adlibssr.btree</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Set Implicit Arguments</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab2"></a><h2 class="section">Binary Search Tree</h2>
+
+ 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" type="keyword">Section</span> <a name="Heap"><span class="id" type="section">Heap</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Variables</span> (<a name="Heap.T"><span class="id" type="variable">T</span></a>: <span class="id" type="abbreviation">eqType</span>)(<a name="Heap.ordb"><span class="id" type="variable">ordb</span></a>: <span class="id" type="definition">rel</span> <a class="idref" href="Adlibssr.binheap.html#Heap.T"><span class="id" type="variable">T</span></a>).<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Hypothesis</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a name="Heap.ordb_antisym"><span class="id" type="variable">ordb_antisym</span></a>: <span class="id" type="definition">antisymmetric</span> <a class="idref" href="Adlibssr.binheap.html#Heap.ordb"><span class="id" type="variable">ordb</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a name="Heap.ordb_transitive"><span class="id" type="variable">ordb_transitive</span></a>: <span class="id" type="definition">transitive</span> <a class="idref" href="Adlibssr.binheap.html#Heap.ordb"><span class="id" type="variable">ordb</span></a>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Close</span> <span class="id" type="keyword">Scope</span> <span class="id" type="var">nat_scope</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Delimit</span> <span class="id" type="keyword">Scope</span> <span class="id" type="var">ord</span> <span class="id" type="keyword">with</span> <span class="id" type="var">ord_scope</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Open</span> <span class="id" type="keyword">Scope</span> <span class="id" type="var">ord_scope</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Notation</span> <a name="Heap.::'[<=]'"><span class="id" type="notation">"</span></a>[&lt;=]" := <a class="idref" href="Adlibssr.binheap.html#Heap.ordb"><span class="id" type="variable">ordb</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Notation</span> <a name="Heap.::'['_'<='_x_']'"><span class="id" type="notation">"</span></a>[ '&lt;=' y ]" := (<a class="idref" href="Adlibssr.binheap.html#Heap.ordb"><span class="id" type="variable">ordb</span></a><span class="id" type="notation">^~</span> <span class="id" type="var">y</span>).<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Notation</span> <a name="Heap.::'['_'=>'_x_']'"><span class="id" type="notation">"</span></a>[ '=&gt;' x ]" := (<a class="idref" href="Adlibssr.binheap.html#Heap.ordb"><span class="id" type="variable">ordb</span></a> <span class="id" type="var">x</span>).<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Notation</span> <a name="Heap.::x_'<='_x"><span class="id" type="notation">"</span></a>x &lt;= y" := (<a class="idref" href="Adlibssr.binheap.html#Heap.ordb"><span class="id" type="variable">ordb</span></a> <span class="id" type="var">x</span> <span class="id" type="var">y</span>) (<span class="id" type="tactic">at</span> <span class="id" type="keyword">level</span> 70, <span class="id" type="keyword">no</span> <span class="id" type="keyword">associativity</span>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Definition</span> <a name="strict_ordb"><span class="id" type="definition">strict_ordb</span></a> <span class="id" type="var">x</span> <span class="id" type="var">y</span> := (<a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binheap.html#x"><span class="id" type="variable">x</span></a> <a class="idref" href="Adlibssr.binheap.html#Heap.::x_'<='_x"><span class="id" type="notation">&lt;=</span></a> <a class="idref" href="Adlibssr.binheap.html#y"><span class="id" type="variable">y</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binheap.html#x"><span class="id" type="variable">x</span></a> <span class="id" type="notation">!=</span> <a class="idref" href="Adlibssr.binheap.html#y"><span class="id" type="variable">y</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a>).<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Notation</span> <a name="Heap.::'[<]'"><span class="id" type="notation">"</span></a>[&lt;]" := <a class="idref" href="Adlibssr.binheap.html#strict_ordb"><span class="id" type="definition">strict_ordb</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Notation</span> <a name="Heap.::'['_'<'_x_']'"><span class="id" type="notation">"</span></a>[ '&lt;' y ]" := (<a class="idref" href="Adlibssr.binheap.html#strict_ordb"><span class="id" type="definition">strict_ordb</span></a><span class="id" type="notation">^~</span> <span class="id" type="var">y</span>).<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Notation</span> <a name="Heap.::'['_'>'_x_']'"><span class="id" type="notation">"</span></a>[ '&gt;' x ]" := (<a class="idref" href="Adlibssr.binheap.html#strict_ordb"><span class="id" type="definition">strict_ordb</span></a> <span class="id" type="var">x</span>).<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Notation</span> <a name="Heap.::x_'<'_x"><span class="id" type="notation">"</span></a>x &lt; y" := (<a class="idref" href="Adlibssr.binheap.html#strict_ordb"><span class="id" type="definition">strict_ordb</span></a> <span class="id" type="var">x</span> <span class="id" type="var">y</span>) (<span class="id" type="tactic">at</span> <span class="id" type="keyword">level</span> 70, <span class="id" type="keyword">no</span> <span class="id" type="keyword">associativity</span>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Fixpoint</span> <a name="bt_ordb"><span class="id" type="definition">bt_ordb</span></a> <span class="id" type="var">a</span> <span class="id" type="var">t</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#bool"><span class="id" type="inductive">bool</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">if</span> <a class="idref" href="Adlibssr.binheap.html#t"><span class="id" type="variable">t</span></a> <span class="id" type="var">is</span> <span class="id" type="var">tl</span> <a class="idref" href="Adlibssr.btree.html#::x_'-<'_x_'>-'_x"><span class="id" type="notation">-&lt;</span></a> <span class="id" type="var">x</span> <a class="idref" href="Adlibssr.btree.html#::x_'-<'_x_'>-'_x"><span class="id" type="notation">&gt;-</span></a> <span class="id" type="var">tr</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">then</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binheap.html#a"><span class="id" type="variable">a</span></a> <a class="idref" href="Adlibssr.binheap.html#Heap.::x_'<='_x"><span class="id" type="notation">&lt;=</span></a> <span class="id" type="var">x</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binheap.html#bt_ordb"><span class="id" type="definition">bt_ordb</span></a> <span class="id" type="var">x</span> <span class="id" type="var">tl</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binheap.html#bt_ordb"><span class="id" type="definition">bt_ordb</span></a> <span class="id" type="var">x</span> <span class="id" type="var">tr</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">else</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#true"><span class="id" type="constructor">true</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Definition</span> <a name="bt_oredered"><span class="id" type="definition">bt_oredered</span></a> <span class="id" type="var">t</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#bool"><span class="id" type="inductive">bool</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">if</span> <a class="idref" href="Adlibssr.binheap.html#t"><span class="id" type="variable">t</span></a> <span class="id" type="var">is</span> <span class="id" type="var">tl</span> <a class="idref" href="Adlibssr.btree.html#::x_'-<'_x_'>-'_x"><span class="id" type="notation">-&lt;</span></a> <span class="id" type="var">x</span> <a class="idref" href="Adlibssr.btree.html#::x_'-<'_x_'>-'_x"><span class="id" type="notation">&gt;-</span></a> <span class="id" type="var">tr</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">then</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binheap.html#bt_ordb"><span class="id" type="definition">bt_ordb</span></a> <span class="id" type="var">x</span> <span class="id" type="var">tl</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.binheap.html#bt_ordb"><span class="id" type="definition">bt_ordb</span></a> <span class="id" type="var">x</span> <span class="id" type="var">tr</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:bool_scope:x_'&&'_x"><span class="id" type="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">else</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#true"><span class="id" type="constructor">true</span></a>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="bt_ordb_min"><span class="id" type="lemma">bt_ordb_min</span></a> <span class="id" type="var">a</span> <span class="id" type="var">t</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Adlibssr.binheap.html#bt_ordb"><span class="id" type="definition">bt_ordb</span></a> <a class="idref" href="Adlibssr.binheap.html#a"><span class="id" type="variable">a</span></a> <a class="idref" href="Adlibssr.binheap.html#t"><span class="id" type="variable">t</span></a> -&gt; <a class="idref" href="Adlibssr.btree.html#all"><span class="id" type="definition">all</span></a> <a class="idref" href="Adlibssr.binheap.html#Heap.::'['_'=>'_x_']'"><span class="id" type="notation">[=&gt;</span></a> <a class="idref" href="Adlibssr.binheap.html#a"><span class="id" type="variable">a</span></a><a class="idref" href="Adlibssr.binheap.html#Heap.::'['_'=>'_x_']'"><span class="id" type="notation">]</span></a> <a class="idref" href="Adlibssr.binheap.html#t"><span class="id" type="variable">t</span></a>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" type="keyword">End</span> <a class="idref" href="Adlibssr.binheap.html#Heap"><span class="id" type="section">Heap</span></a>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
