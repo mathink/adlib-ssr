@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/9 0:15:31> *)
+(* Time-stamp: <2014/8/9 14:45:11> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -46,15 +46,15 @@ Section BinarySearchTree.
   Delimit Scope ord with ord_scope.
   Local Open Scope ord_scope.
   Local Notation "[<=]" := ordb.
-  Local Notation "[ '<=' y ]" := (ordb^~ y).
-  Local Notation "[ '=>' x ]" := (ordb x).
-  Local Notation "x <= y" := (ordb x y) (at level 70, no associativity).
+  Local Notation "[ '<=' y ]" := ([<=]^~ y).
+  Local Notation "[ '=>' x ]" := ([<=] x).
+  Local Notation "x <= y" := ([<=] x y) (at level 70, no associativity).
   
   Definition strict_ordb x y := ((x <= y) && (x != y)).
   Local Notation "[<]" := strict_ordb.
-  Local Notation "[ '<' y ]" := (strict_ordb^~ y).
-  Local Notation "[ '>' x ]" := (strict_ordb x).
-  Local Notation "x < y" := (strict_ordb x y) (at level 70, no associativity).
+  Local Notation "[ '<' y ]" := ([<]^~ y).
+  Local Notation "[ '>' x ]" := ([<] x).
+  Local Notation "x < y" := ([<] x y) (at level 70, no associativity).
 
   Lemma sordb_transitive:
     transitive strict_ordb.
