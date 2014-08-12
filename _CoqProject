@@ -3,4 +3,5 @@
 btree.v
 sorted.v
 binsearch.v
+binheap.v
 tree.v
