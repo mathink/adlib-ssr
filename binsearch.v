@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/9 14:45:11> *)
+(* Time-stamp: <2014/8/13 20:25:37> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -74,6 +74,31 @@ Section BinarySearchTree.
     if t is tl -< x >- tr
     then (bst tl) && (all [<= x] tl) && (bst tr) && (all [=> x] tr)
     else true.
+
+  Inductive isBst: btree T -> Prop :=
+  | isBst_bleaf: isBst #
+  | isBst_bnode:
+      forall x tl tr,
+        (forall y, y \in tl -> y <= x) ->
+        (forall y, y \in tr -> x <= y) ->
+        isBst tl -> isBst tr -> isBst (tl -< x >- tr).
+  Hint Constructors isBst.
+
+  Lemma bstP t:
+    reflect (isBst t) (bst t).
+  Proof.
+    elim: t => [//=|/= x tl IHl tr IHr]; first by left.
+    case: IHl => IHl /=.
+    - case: IHr => IHr /=.
+      + rewrite andbT.
+        case: (allP [<=x] tl) => Hal /=.
+        * case: (allP [=>x] tr) => Har /=; first by left; apply isBst_bnode.
+          by right; move=> Hb; apply Har; inversion Hb.
+        * by right; move=> Hb; apply Hal; inversion Hb.
+      + rewrite andbF /=.
+        by right; move=> Hb; apply IHr; inversion Hb.
+    - by right; move=> Hb; apply IHl; inversion Hb.
+  Qed.
 
   Lemma bst_bnode x tl tr:
     bst (tl -< x >- tr) = (bst tl) && (all [<= x] tl) && (bst tr) && (all [=> x] tr).
