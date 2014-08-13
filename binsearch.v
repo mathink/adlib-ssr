@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/13 20:25:37> *)
+(* Time-stamp: <2014/8/14 0:59:58> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -33,54 +33,31 @@ Unset Printing Implicit Defensive.
  ** Binary Search Tree 
  *)
 
+Require Import Adlibssr.order.
+
+(* Aux *)
+Definition flip {X Y Z: Type}(f: X -> Y -> Z): Y -> X -> Z :=
+  fun y x => f x y.
+Arguments flip X Y Z f / y x.
 
 Section BinarySearchTree.
 
-  Variables (T: eqType)(ordb: rel T).
-  Hypothesis
-    (ordb_antisym: antisymmetric ordb)
-    (ordb_transitive: transitive ordb).
-
-
-  Local Close Scope nat_scope.
-  Delimit Scope ord with ord_scope.
-  Local Open Scope ord_scope.
-  Local Notation "[<=]" := ordb.
-  Local Notation "[ '<=' y ]" := ([<=]^~ y).
-  Local Notation "[ '=>' x ]" := ([<=] x).
-  Local Notation "x <= y" := ([<=] x y) (at level 70, no associativity).
+  Variables (T: eqType)(ord: totalOrder T).
   
-  Definition strict_ordb x y := ((x <= y) && (x != y)).
-  Local Notation "[<]" := strict_ordb.
-  Local Notation "[ '<' y ]" := ([<]^~ y).
-  Local Notation "[ '>' x ]" := ([<] x).
-  Local Notation "x < y" := ([<] x y) (at level 70, no associativity).
-
-  Lemma sordb_transitive:
-    transitive strict_ordb.
-  Proof.
-    move=> y x z /andP [Hlexy Hneqxy] /andP [Hleyz Hneqyz].
-    apply/andP; split.
-    - by apply ordb_transitive with y.
-    - apply/eqP=> Heqxz; move: Hneqxy => /eqP; apply.
-      by rewrite -Heqxz in Hleyz; apply ordb_antisym; apply/andP; split.
-  Qed.
-  Hint Resolve sordb_transitive.
-
   Implicit Types (t: btree T)(s: seq T).
 
 
   Fixpoint bst t: bool :=
     if t is tl -< x >- tr
-    then (bst tl) && (all [<= x] tl) && (bst tr) && (all [=> x] tr)
+    then (bst tl) && (all (flip ord x) tl) && (bst tr) && (all (ord x) tr)
     else true.
 
   Inductive isBst: btree T -> Prop :=
   | isBst_bleaf: isBst #
   | isBst_bnode:
       forall x tl tr,
-        (forall y, y \in tl -> y <= x) ->
-        (forall y, y \in tr -> x <= y) ->
+        (forall y, y \in tl -> ord y x) ->
+        (forall y, y \in tr -> ord x y) ->
         isBst tl -> isBst tr -> isBst (tl -< x >- tr).
   Hint Constructors isBst.
 
@@ -91,8 +68,8 @@ Section BinarySearchTree.
     case: IHl => IHl /=.
     - case: IHr => IHr /=.
       + rewrite andbT.
-        case: (allP [<=x] tl) => Hal /=.
-        * case: (allP [=>x] tr) => Har /=; first by left; apply isBst_bnode.
+        case: (allP (flip ord x) tl) => Hal /=.
+        * case: (allP (ord x) tr) => Har /=; first by left; apply isBst_bnode.
           by right; move=> Hb; apply Har; inversion Hb.
         * by right; move=> Hb; apply Hal; inversion Hb.
       + rewrite andbF /=.
@@ -101,7 +78,7 @@ Section BinarySearchTree.
   Qed.
 
   Lemma bst_bnode x tl tr:
-    bst (tl -< x >- tr) = (bst tl) && (all [<= x] tl) && (bst tr) && (all [=> x] tr).
+    bst (tl -< x >- tr) = (bst tl) && (all (flip ord x) tl) && (bst tr) && (all (ord x) tr).
   Proof.
     by [].
   Qed.
@@ -114,11 +91,11 @@ Section BinarySearchTree.
   Qed.
 
   Lemma sorted_bst t:
-    sorted [<=] (flatten t) = bst t.
+    sorted ord (flatten t) = bst t.
   Proof.
     elim: t => [//= | /= x tl IHl tr IHr].
-    rewrite sorted_cat_cons // sorted_rcons // sorted_cons1 // IHl IHr
-            !flatten_all -andbCA andbC.
+    rewrite sorted_cat_cons // sorted_rcons // sorted_cons1 // IHl // IHr
+    // !flatten_all -andbCA andbC.
     apply andb_id2r => Hallr.
     apply andb_id2r => Hbstr.
     by apply andbC.
@@ -127,44 +104,10 @@ Section BinarySearchTree.
 
   Section Operations.
 
-    Hypothesis (ordb_total: total ordb).
-    
-    Lemma ordb_refl x: x <= x.
-    Proof. move: (ordb_total x x) => /orP [] //. Qed.
-      
-    Lemma sordb_irrefl x:
-      ~~ (x < x).
-    Proof.
-      by rewrite negb_and ordb_refl eq_refl //=.
-    Qed.
-
-    Lemma ordb_neg_sordb x y:
-      ~~ (x <= y) = (y < x).
-    Proof.
-      move: (ordb_total x y) => /orP [] Hle; apply/eqP.
-      - rewrite Hle /=.
-        case Hle':  (y <= x); rewrite /strict_ordb Hle' //=.
-        have: x = y; first by apply ordb_antisym; apply/andP.
-        by move=> ->; rewrite eq_refl.
-      - rewrite /strict_ordb Hle /=.
-        case Hle':  (x <= y) => //=.
-        + have: x = y; first by apply ordb_antisym; apply/andP.
-          by move=> ->; rewrite eq_refl.
-        + case: (x =P y) => [Heq | Hneq].
-          * by rewrite Heq eq_refl /= -Hle' Heq ordb_refl.
-          * by rewrite [y==x]eq_sym; move: Hneq => /eqP ->.
-    Qed.
-
-    Lemma sordb_neg_ordb x y:
-      ~~ (x < y) = (y <= x).
-    Proof.
-      by apply/eqP; rewrite eqb_negLR ordb_neg_sordb.
-    Qed.
-
     Fixpoint search a t: bool :=
       if t is tl -< x >- tr
       then if a == x then true
-           else if a < x then search a tl else search a tr
+           else if ord! a x then search a tl else search a tr
       else false.
 
     Lemma bst_search_aux a t:
@@ -177,9 +120,9 @@ Section BinarySearchTree.
       move=> /andP
               [/orP [Hinl | Hinr]
                 /and4P [Hbstl /allP Halll Hbstr /allP Hallr]].
-      - move: (Halll _ Hinl) => /=; rewrite /strict_ordb Hneq andbT => ->.
+      - move: (Halll _ Hinl) => /=; rewrite /strict_ord Hneq andbT => ->.
         by apply IHl; apply/andP.
-      - move: (Hallr _ Hinr) => /=; rewrite -ordb_neg_sordb => -> /=.
+      - move: (Hallr _ Hinr) => /=; rewrite -ord_neg_sord => -> /=.
         by apply IHr; apply/andP.
     Qed.
 
@@ -200,7 +143,7 @@ Section BinarySearchTree.
 
     Fixpoint insert a t: btree T :=
       if t is tl -< x >- tr
-      then if a < x
+      then if ord! a x
            then (insert a tl) -< x >- tr
            else tl -< x >- (insert a tr)
       else #-< a >-#.
@@ -209,9 +152,9 @@ Section BinarySearchTree.
       b \in (insert a t) = (b == a) || (b \in t).
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr].
-      case: (a < x) => /=.
-      - by rewrite !in_bnode IHl orbCA !orbA.
-      - by rewrite !in_bnode IHr orbCA !orbA.
+      case: (ord! a x) => /=.
+      - by rewrite !in_bnode IHl orbCA // !orbA.
+      - by rewrite !in_bnode IHr orbCA // !orbA.
     Qed.
 
     Lemma bst_bst_insert a t:
@@ -219,7 +162,7 @@ Section BinarySearchTree.
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr].
       rewrite -!andbA => /and4P [Hbstl Halll Hbstr Hallr].
-      case Hord: (a < x) => /=; rewrite -!andbA; apply/and4P.
+      case Hord: (ord! a x) => /=; rewrite -!andbA; apply/and4P.
       - repeat split; move=>//=; first by apply IHl.
         apply/allP=> y Hin.
         move: Hin; rewrite mem_insert => /orP [/eqP-> | Hin] //=.
@@ -227,7 +170,7 @@ Section BinarySearchTree.
         + by move: Halll => /allP H; apply H.
       - repeat split; move=>//=; first by apply IHr.
         apply/allP=> y Hin.
-        move: Hord => /negbT; rewrite sordb_neg_ordb => Hord.
+        move: Hord => /negbT; rewrite sord_neg_ord => Hord.
         move: Hin; rewrite mem_insert => /orP [/eqP-> | Hin] //=.
         by move: Hallr => /allP H; apply H.
     Qed.
@@ -236,7 +179,7 @@ Section BinarySearchTree.
       bst (insert a t) -> bst t.
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr].
-      case Hord: (a < x) => /=;
+      case Hord: (ord ! a x) => /=;
         rewrite -!andbA => /and4P [Hbstl Halll Hbstr Hallr];
           apply /and4P; repeat split; move=> //=.
       - by apply IHl.
@@ -262,7 +205,7 @@ Section BinarySearchTree.
       a \in insert a t.
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr]; first by rewrite mem_bnode1.
-      by case: (a < x); rewrite in_bnode ?IHl ?IHr /= orbC //= orbA orbC.
+      by case: (ord! a x); rewrite in_bnode ?IHl ?IHr /= orbC //= orbA orbC.
     Qed.
 
     Lemma search_insert a t:
@@ -275,8 +218,8 @@ Section BinarySearchTree.
 
     (* lend & rend with bst *)
     Lemma bst_lend a t:
-      all [=> a] t -> bst t ->
-      all [=> lend a t] t.
+      all (ord a) t -> bst t ->
+      all (ord (lend a t)) t.
     Proof.
       rewrite -!flatten_all -sorted_bst lend_flatten_head.
       remember (flatten t) as l.
@@ -284,12 +227,12 @@ Section BinarySearchTree.
       case: l a => [//=| h l] a.
       rewrite sorted_cons1 // => /=.
       move=> /andP [Hordah Hallal] /andP [Hallhl Hsorted].
-      by apply/andP; split; first apply ordb_refl.
+      by apply/andP; split; first apply ord_reflexive.
     Qed.      
     
     Lemma bst_rend a t:
-      all [<= a] t -> bst t ->
-      all [<= rend t a] t.
+      all (flip ord a) t -> bst t ->
+      all (flip ord (rend t a)) t.
     Proof.
       rewrite -!flatten_all -sorted_bst rend_flatten_rhead.
       remember (flatten t) as l.
@@ -299,7 +242,7 @@ Section BinarySearchTree.
       move=> /andP [Hordah Hallal] /andP [Hallhl Hsorted].
       apply/andP; split.
       - move: (mem_last h l); rewrite in_cons => /orP [/eqP->|Hin];
-          first by apply ordb_refl.
+          first by apply ord_reflexive.
         by move: Hallhl => /seq.allP Hallhl; apply Hallhl.
       - move: Hallhl Hsorted => {a} {Hordah} {Hallal}.
         elim: l h => [//=| h' l IHl] h.
@@ -307,7 +250,7 @@ Section BinarySearchTree.
         move=> /andP [Hordhh' Hallhl] /andP [Hallh'l Hsorted].
         apply/andP; split.
         + move: (mem_last h' l); rewrite in_cons => /orP [/eqP->|Hin];
-            first by apply ordb_refl.
+            first by apply ord_reflexive.
           by move: Hallh'l => /seq.allP Hallh'l; apply Hallh'l.
         + by apply IHl.
     Qed.      
@@ -317,7 +260,7 @@ Section BinarySearchTree.
       if t is tl -< x >- tr
       then if a == x
            then rem_root_r t
-           else if a < x
+           else if ord! a x
                 then (delete_l a tl) -< x >- tr
                 else tl -< x >- (delete_l a tr)
       else #.
@@ -367,7 +310,7 @@ Section BinarySearchTree.
         move: (rend_remove_rend tl x) (mem_rend tl x);
           rewrite -Heq => /= <- /orP [/eqP->|Hin'].
         + by move: Har => /allP; apply.
-        + apply ordb_transitive with x.
+        + apply ord_transitive with x.
           * by move: Hal => /allP; apply.
           * by move: Har => /allP; apply.
     Qed.
@@ -387,7 +330,7 @@ Section BinarySearchTree.
         + apply/allP => y Hin.
           move: Hal => /allP; apply.
           by move: (@mem_rend_remove _ y tl a); rewrite -Heq; apply.
-      - case: (a < x) => /=; rewrite -!andbA;
+      - case: (ord! a x) => /=; rewrite -!andbA;
           apply/and3P; split; try done.
         + by apply IHl.
         + by apply IHr.
@@ -400,7 +343,7 @@ Section BinarySearchTree.
       move=> Hbst; move: (Hbst) => /bst_rem_root_r H /=.
       case: (a =P x) => [Heq | Hneq]; first done.
       move: Hbst => /=; rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
-      case Hord: (a < x) => /=.
+      case Hord: (ord! a x) => /=.
       - rewrite -!andbA; apply/and4P; split; try done.
         + by apply: IHl.
         + by apply: all_delete_l.
@@ -424,8 +367,8 @@ Section BinarySearchTree.
         + rewrite in_bnode -orbA; apply/or3P; apply Or32.
           by move: (@mem_rend_remove _ x tl a); rewrite -Heq /=; apply.
         + by rewrite in_bnode -orbA; apply/or3P; apply Or33.
-      - rewrite /strict_ordb Hneq andbT.
-        case Hord: (a <= y); 
+      - rewrite /strict_ord Hneq andbT.
+        case Hord: (ord a y); 
           rewrite !in_bnode -!orbA => /or3P [Heq | Hin | Hin]; apply/or3P;
             try (by apply Or33); try (by apply Or32); try (by apply Or31).
         + by apply Or32; apply: IHl.
@@ -437,7 +380,7 @@ Section BinarySearchTree.
       (a \notin t) -> (delete_l a t == t).
     Proof.
       elim: t a => [//=|/= x tl IHl tr IHr] a.
-      - rewrite in_bnode !negb_or -!andbA
+      - rewrite in_bnode // !negb_or -!andbA
         => /and3P [/negbTE-> /IHl/eqP-> /IHr/eqP->].
         by rewrite if_same.
     Qed.
@@ -454,7 +397,7 @@ Section BinarySearchTree.
       if t is tl -< x >- tr
       then if a == x
            then rem_root_l t
-           else if a < x
+           else if ord! a x
                 then (delete_r tl a) -< x >- tr
                 else tl -< x >- (delete_r tr a)
       else #.
@@ -483,7 +426,7 @@ Section BinarySearchTree.
         + apply/allP => y Hin.
           move: Har => /allP; apply.
           by move: (@mem_lend_remove y a tr); rewrite -Heq; apply.
-      - case: (a < x) => /=; rewrite -!andbA;
+      - case: (ord! a x) => /=; rewrite -!andbA;
           apply/and3P; split; try done.
         + by apply IHl.
         + by apply IHr.
@@ -501,7 +444,7 @@ Section BinarySearchTree.
         move: (lend_remove_lend x tr) (mem_lend x tr);
           rewrite -Heq => /= <- /orP [/eqP->|Hin'].
         + by move: Hal => /allP; apply.
-        + apply ordb_transitive with x.
+        + apply ord_transitive with x.
           * by move: Hal => /allP; apply.
           * by move: Har => /allP; apply.
       - by move: (bst_lend_remove x Hbr); rewrite -Heq.
@@ -518,7 +461,7 @@ Section BinarySearchTree.
       move=> Hbst; move: (Hbst) => /bst_rem_root_l H /=.
       case: (a =P x) => [Heq | Hneq]; first done.
       move: Hbst => /=; rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
-      case Hord: (a < x) => /=.
+      case Hord: (ord! a x) => /=.
       - rewrite -!andbA; apply/and4P; split; try done.
         + by apply: IHl.
         + by apply: all_delete_r.
@@ -540,8 +483,8 @@ Section BinarySearchTree.
         + by rewrite in_bnode -orbA; apply/or3P; apply Or32.
         + rewrite in_bnode -orbA; apply/or3P; apply Or33.
           by move: (@mem_lend_remove x a tr); rewrite -Heq /=; apply.
-      - rewrite /strict_ordb Hneq andbT.
-        case Hord: (a <= y); 
+      - rewrite /strict_ord Hneq andbT.
+        case Hord: (ord a y); 
           rewrite !in_bnode -!orbA => /or3P [Heq | Hin | Hin]; apply/or3P;
             try (by apply Or33); try (by apply Or32); try (by apply Or31).
         + by apply Or32; apply: IHl.
@@ -552,7 +495,7 @@ Section BinarySearchTree.
       (a \notin t) -> (delete_r t a == t).
     Proof.
       elim: t a => [//=|/= x tl IHl tr IHr] a.
-      - rewrite in_bnode !negb_or -!andbA
+      - rewrite in_bnode // !negb_or -!andbA
         => /and3P [/negbTE-> /IHl/eqP-> /IHr/eqP->].
         by rewrite if_same.
     Qed.
@@ -579,7 +522,7 @@ Section BinarySearchTree.
     Qed.
 
     Lemma btsort_sorted s:
-      sorted ordb (btsort s).
+      sorted ord (btsort s).
     Proof.
       by rewrite /btsort sorted_bst; apply btsort_insert_bst.
     Qed.
@@ -588,7 +531,7 @@ Section BinarySearchTree.
       count p (insert a t) = (p a + count p t)%nat.
     Proof.
       elim: t a p => [//=|/= x tl IHl tr IHr] a p.
-      case: (a < x) => /=.
+      case: (ord! a x) => /=.
       - rewrite addnAC -IHr addnC.
         by rewrite addnAC  -[(p x + _)%nat]IHr addnCA -IHl addnC.
       - by rewrite -IHl addnA addnAC -IHr addnC.
@@ -607,7 +550,7 @@ Section BinarySearchTree.
       apply/perm_eqP.
       move=> p /=.
       elim: s p => [//=|/= h s IHs] p.
-      by rewrite IHs !flatten_count -!btsort_insert_count insert_count addnCA.
+      by rewrite IHs // !flatten_count -!btsort_insert_count insert_count addnCA.
     Qed.
 
     Lemma btsort_perm_eq s:
