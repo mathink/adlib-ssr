@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/14 1:11:58> *)
+(* Time-stamp: <2014/8/15 0:59:18> *)
 (*
   binheap.v 
   - mathink : Author
@@ -60,9 +60,7 @@ Section Heap.
        [move: Hbl | move: Hbr]; move=>/allP; apply.
   Qed.
 
-
 (* TODO: shape property *)
-  
-
 (* W.I.P. *)
+
 End Heap.

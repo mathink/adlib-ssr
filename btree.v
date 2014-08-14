@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/9 1:38:57> *)
+(* Time-stamp: <2014/8/15 2:57:27> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -934,3 +934,145 @@ Section EqBtree.
 End EqBtree.
 
 Definition inE := (mem_bnode1, in_bnode, inE).
+
+Require Import Wf_nat Recdef MathComp.div.
+
+
+Section Accessor.
+  
+  Variables (T: eqType).
+
+  Inductive pos :=
+  | pos_on
+  | pos_l of pos
+  | pos_r of pos.
+
+  (* pos の適用順が逆 *)
+  Fixpoint pos2n (p: pos) :=
+    match p with
+      | pos_on => 0
+      | pos_l p' => (pos2n p').*2.+1
+      | pos_r p' => (pos2n p').+1.*2
+    end.
+
+  Eval compute in (pos2n (pos_l (pos_r pos_on))).
+  
+  Fixpoint btget t p: option T :=
+    match t, p with
+      | _ -< x >- _, pos_on => Some x
+      | t' -< _ >- _, pos_l p'
+      | _ -< _ >- t', pos_r p' => btget t' p'
+      | #, _ => None
+    end.
+
+  Definition ltn (x y: nat) := x < y = true.
+  Hint Unfold ltn.
+  Definition wf_ltn: well_founded ltn.
+  Proof.
+    apply well_founded_lt_compat with id.
+    move=> x y Hlt; apply/ltP=>//.
+  Defined.
+
+  Function n2pos (n: nat){wf ltn}: pos :=
+    let (q, r) := edivn n 2 in
+    if r == 1 then pos_l (n2pos q)
+    else if q == 0 then pos_on else pos_r (n2pos (q.-1)).
+  Proof.
+    - move=> n q r.
+      rewrite edivn_def => Heq; move: Heq => [] <- <- /eqP. 
+      rewrite modn2 => /eqP.
+      rewrite eqb1 => Heq.
+      apply ltn_Pdiv => //.
+      by apply odd_gt0 => //.
+    - move=> n q r.
+      rewrite /ltn edivn_def => Heq; move: Heq => [] <- <- /eqP Hneq Heq.
+      apply leq_ltn_trans with (n %/ 2).
+      + by apply leq_pred.
+      + apply ltn_Pdiv => //.
+        move: Heq; rewrite divn2 => /negbT.
+        rewrite -lt0n half_gt0; apply ltn_trans => //.
+    - apply wf_ltn.
+  Defined.
+
+  Lemma n2pos_pos2n_cancel: cancel n2pos pos2n.
+  Proof.
+    move=> n /=; pattern n.
+    apply well_founded_induction with ltn; first by apply wf_ltn.
+    rewrite /ltn => x IH /=.
+    rewrite n2pos_equation.
+    rewrite edivn_def divn2 modn2 eqb1.
+    case Hodd: (odd x) => /=.
+    - rewrite IH.  
+      + by rewrite -{2}[x]odd_double_half Hodd /= add1n.
+      + rewrite -{2}[x]odd_double_half Hodd /= add1n /= ltnS -addnn.
+        apply leq_addr.
+    - move: Hodd => /negbT; rewrite -dvdn2 -divn2 => Hdvdn.
+      rewrite -eqn_mul //=  mul0n.
+      case: (x =P 0) => [Heq |/eqP Hneq] //=.
+      rewrite IH.
+      + rewrite prednK.
+        * by rewrite -muln2; apply divnK.
+        * rewrite divn_gt0 //.
+          apply leq_ltn_trans with (x %/ 2);
+            first by rewrite ltn_divRL // mul0n lt0n //.
+          rewrite ltn_divLR //.
+          apply ltn_Pmulr => //.
+          by rewrite lt0n.
+      + rewrite prednK; first by apply leq_div.
+        rewrite divn_gt0 //.
+        apply leq_ltn_trans with (x %/ 2);
+          first by rewrite ltn_divRL // mul0n lt0n //.
+        rewrite ltn_divLR //.
+        apply ltn_Pmulr => //.
+          by rewrite lt0n.
+  Qed.
+
+  Lemma pos2n_n2pos_cancel: cancel pos2n n2pos.
+  Proof.
+    elim=> [| p /= IHp | p /= IHp] //=.
+    - rewrite n2pos_equation edivn_def -muln2 -addn1 modnMDl/= divnMDl//.
+      by have H: (1 %/ 2 = 0); last rewrite H addn0 IHp; first by compute.
+    - by rewrite n2pos_equation edivn_def -muln2 modnMl/= mulnK//= IHp.
+  Qed.
+
+  Lemma bij_n2pos: bijective n2pos.
+  Proof.
+    apply Bijective with pos2n.
+    - apply n2pos_pos2n_cancel.
+    - apply pos2n_n2pos_cancel.
+  Qed.
+
+  Lemma bij_pos2n: bijective pos2n.
+  Proof.
+    apply Bijective with n2pos.
+    - apply pos2n_n2pos_cancel.
+    - apply n2pos_pos2n_cancel.
+  Qed.
+
+End Accessor.
+
+
+Section AVL.
+
+  Variable (T: Type).
+  Implicit Types (t: btree T).
+
+  Fixpoint avl t: bool :=
+    if t is tl -< x >- tr
+    then let: hl := height tl in
+         let: hr := height tr in
+         (hl - hr <= 1) && (hr - hl <= 1) && (avl tl) && (avl tr)
+    else true.
+
+
+End AVL.
+
+Eval compute in (avl ((#-< 1 >-#) -< 2 >- (#-< 3 >-#))).
+Eval compute in (avl (((#-< 2 >-#) -< 1 >- (#-< 3 >-#))-< 0 >- (#-< 4 >-#))).
+Eval compute in (map n2pos [:: 0 ; 1 ; 2 ; 3;  4 ]).
+Eval compute in (let t := (((#-< 3 >-#) -< 1 >- (#-< 4 >-#))-< 0 >- (#-< 2 >-#)) in (btget t  (pos_r (pos_l pos_on)))).
+Eval compute in (let t := (((#-< 3 >-#) -< 1 >- (#-< 4 >-#))-< 0 >- (#-< 2 >-#)) in (map (btget t \o n2pos) [:: 0 ; 1 ; 2 ; 3;  4 ])).
+(* Eval compute in (btget ((#-< 1 >-#) -< 2 >- (#-< 3 >-#)) pos_on). *)
+(* Eval compute in (btget ((#-< 1 >-#) -< 2 >- (#-< 3 >-#)) (pos_l pos_on)). *)
+(* Eval compute in (btget ((#-< 1 >-#) -< 2 >- (#-< 3 >-#)) (n2pos 0)). *)
+
