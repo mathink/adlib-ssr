@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/14 1:11:22> *)
+(* Time-stamp: <2014/8/16 1:5:41> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -15,7 +15,7 @@ Require Import
   Ssreflect.seq.
 
 Require Import
-        MathComp.path.
+  MathComp.path.
 
 Require Import
   Adlibssr.btree
@@ -551,6 +551,7 @@ Section BinarySearchTree.
       by rewrite IHs // !flatten_count -!btsort_insert_count insert_count addnCA.
     Qed.
 
+
     Lemma btsort_perm_eq s:
       perm_eq s (btsort s).
     Proof.
@@ -562,8 +563,7 @@ Section BinarySearchTree.
       - by rewrite btsort_insert_perm.
     Qed.
 
-
-  End Operations.
+  End Operations.  
 
 
 
