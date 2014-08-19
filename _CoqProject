@@ -2,5 +2,7 @@
 
 btree.v
 sorted.v
+order.v
 binsearch.v
+binheap.v
 tree.v

@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/7 1:15:24> *)
+(* Time-stamp: <2014/8/9 1:38:57> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -322,7 +322,7 @@ Prenex Implicits size bleafSP bleafHP revtree flatten traverse.
 Prenex Implicits count all has.
 
 (** 
- ** Constructing Instanse of eqtype for [btree]
+ ** Constructing Instanse of [eqtype] for [btree]
  *)
 Section EqBtree.
 

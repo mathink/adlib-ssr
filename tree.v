@@ -42,6 +42,14 @@ Scheme tree_forest_rect := Induction for tree Sort Type
 Combined Scheme tree_forest_mut_ind from
          tree_forest_ind, forest_tree_ind.
 
+(** ** map function  *)
+
+Fixpoint map_tree {A B: Type}(F: A -> B)(t: tree A): tree B :=
+  let (x, f) := t in F x -: map_forest F f with
+map_forest {A B: Type}(F: A -> B)(f: forest A): forest B :=
+  if f is t ~+ f' then map_tree F t ~+ map_forest F f' else [*].
+
+
 (** * Traverse [tree] and [forest] by pre- and post- order *)
 Section Traverse.
 

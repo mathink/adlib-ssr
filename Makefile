@@ -81,6 +81,7 @@ endif
 ######################
 
 VFILES:=tree.v\
+  binheap.v\
   binsearch.v\
   sorted.v\
   btree.v

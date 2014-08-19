@@ -38,7 +38,7 @@
 </div>
 
 <div class="doc">
-<a name="lab4"></a><h1 class="section">Definition of <span class="inlinecode"><span class="id" type="var">tree</span></span> and <span class="inlinecode"><span class="id" type="var">forest</span></span></h1>
+<a name="lab8"></a><h1 class="section">Definition of <span class="inlinecode"><span class="id" type="var">tree</span></span> and <span class="inlinecode"><span class="id" type="var">forest</span></span></h1>
 
 </div>
 <div class="code">
@@ -53,7 +53,7 @@
 </div>
 
 <div class="doc">
-<a name="lab5"></a><h2 class="section">Notations</h2>
+<a name="lab9"></a><h2 class="section">Notations</h2>
 
 </div>
 <div class="code">
@@ -66,7 +66,7 @@
 </div>
 
 <div class="doc">
-<a name="lab6"></a><h2 class="section">Induction principles</h2>
+<a name="lab10"></a><h2 class="section">Induction principles</h2>
 
 </div>
 <div class="code">
@@ -81,7 +81,7 @@
 </div>
 
 <div class="doc">
-<a name="lab7"></a><h3 class="section">Mutual Induction Principle</h3>
+<a name="lab11"></a><h3 class="section">Mutual Induction Principle</h3>
 
 </div>
 <div class="code">
@@ -90,7 +90,22 @@
 </div>
 
 <div class="doc">
-<a name="lab8"></a><h1 class="section">Traverse <span class="inlinecode"><span class="id" type="var">tree</span></span> and <span class="inlinecode"><span class="id" type="var">forest</span></span> by pre- and post- order</h1>
+<a name="lab12"></a><h2 class="section">map function</h2>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" type="keyword">Fixpoint</span> <a name="map_tree"><span class="id" type="definition">map_tree</span></a> {<span class="id" type="var">A</span> <span class="id" type="var">B</span>: <span class="id" type="keyword">Type</span>}(<span class="id" type="var">F</span>: <a class="idref" href="Adlibssr.tree.html#A"><span class="id" type="variable">A</span></a> -&gt; <a class="idref" href="Adlibssr.tree.html#B"><span class="id" type="variable">B</span></a>)(<span class="id" type="var">t</span>: <a class="idref" href="Adlibssr.tree.html#tree"><span class="id" type="inductive">tree</span></a> <a class="idref" href="Adlibssr.tree.html#A"><span class="id" type="variable">A</span></a>): <a class="idref" href="Adlibssr.tree.html#tree"><span class="id" type="inductive">tree</span></a> <a class="idref" href="Adlibssr.tree.html#B"><span class="id" type="variable">B</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">let</span> (<span class="id" type="var">x</span>, <span class="id" type="var">f</span>) := <a class="idref" href="Adlibssr.tree.html#t"><span class="id" type="variable">t</span></a> <span class="id" type="keyword">in</span> <a class="idref" href="Adlibssr.tree.html#F"><span class="id" type="variable">F</span></a> <a class="idref" href="Adlibssr.tree.html#x"><span class="id" type="variable">x</span></a> <a class="idref" href="Adlibssr.tree.html#:tree_scope:x_'-:'_x"><span class="id" type="notation">-:</span></a> <a class="idref" href="Adlibssr.tree.html#map_forest"><span class="id" type="definition">map_forest</span></a> <a class="idref" href="Adlibssr.tree.html#F"><span class="id" type="variable">F</span></a> <a class="idref" href="Adlibssr.tree.html#f"><span class="id" type="variable">f</span></a> <span class="id" type="keyword">with</span><br/>
+<a name="map_forest"><span class="id" type="definition">map_forest</span></a> {<span class="id" type="var">A</span> <span class="id" type="var">B</span>: <span class="id" type="keyword">Type</span>}(<span class="id" type="var">F</span>: <a class="idref" href="Adlibssr.tree.html#A"><span class="id" type="variable">A</span></a> -&gt; <a class="idref" href="Adlibssr.tree.html#B"><span class="id" type="variable">B</span></a>)(<span class="id" type="var">f</span>: <a class="idref" href="Adlibssr.tree.html#forest"><span class="id" type="inductive">forest</span></a> <a class="idref" href="Adlibssr.tree.html#A"><span class="id" type="variable">A</span></a>): <a class="idref" href="Adlibssr.tree.html#forest"><span class="id" type="inductive">forest</span></a> <a class="idref" href="Adlibssr.tree.html#B"><span class="id" type="variable">B</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">if</span> <a class="idref" href="Adlibssr.tree.html#f"><span class="id" type="variable">f</span></a> <span class="id" type="var">is</span> <span class="id" type="var">t</span> <a class="idref" href="Adlibssr.tree.html#:tree_scope:x_'~+'_x"><span class="id" type="notation">~+</span></a> <span class="id" type="var">f'</span> <span class="id" type="keyword">then</span> <a class="idref" href="Adlibssr.tree.html#map_tree"><span class="id" type="definition">map_tree</span></a> <a class="idref" href="Adlibssr.tree.html#F"><span class="id" type="variable">F</span></a> <span class="id" type="var">t</span> <a class="idref" href="Adlibssr.tree.html#:tree_scope:x_'~+'_x"><span class="id" type="notation">~+</span></a> <a class="idref" href="Adlibssr.tree.html#map_forest"><span class="id" type="definition">map_forest</span></a> <a class="idref" href="Adlibssr.tree.html#F"><span class="id" type="variable">F</span></a> <span class="id" type="var">f'</span> <span class="id" type="keyword">else</span> <a class="idref" href="Adlibssr.tree.html#:tree_scope:'[*]'"><span class="id" type="notation">[*]</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab13"></a><h1 class="section">Traverse <span class="inlinecode"><span class="id" type="var">tree</span></span> and <span class="inlinecode"><span class="id" type="var">forest</span></span> by pre- and post- order</h1>
 
 </div>
 <div class="code">
