@@ -104,43 +104,97 @@ Section BinaryTree.
     by elim: t => [//= | _ /= tl -> tr -> ]; rewrite maxnC.
   Qed.
 
-  
-  Fixpoint flatten t : seq T :=
+  Fixpoint walk t s: seq T :=
     if t is tl -< x >- tr
-    then flatten tl ++ [:: x & flatten tr ]
-    else [::].
+    then walk tl (x :: walk tr s)
+    else s.
+
+  Definition flatten t := walk t [::].
+  
+  (* Fixpoint flatten t : seq T := *)
+  (*   if t is tl -< x >- tr *)
+  (*   then flatten tl ++ [:: x & flatten tr ] *)
+  (*   else [::]. *)
+
+  Lemma walk_size t s:
+    seq.size (walk t s) = size t + seq.size s.
+  Proof.
+    elim: t s => [//= | x /= tl IHl tr IHr] s.
+    by rewrite IHl /= IHr -addn1 2!addnA -[(_+_).+1]addn1 -addnA [_+1]addnC addnA.
+  Qed.
 
   Lemma flatten_size t:
     seq.size (flatten t) = size t.
   Proof.
-    elim: t => [//= | x /= tl IHl tr IHr].
-    by rewrite seq.size_cat /= addnS IHl IHr.
+    by rewrite walk_size /= addn0.
+  Qed.
+
+  Lemma walk_cat t s1 s2:
+    walk t s1 ++ s2 = walk t (s1 ++ s2).
+  Proof.
+    elim: t s1 s2 => [//= | x /= tl IHl tr IHr] s1 s2.
+    by rewrite IHl /= IHr /=.
+  Qed.
+
+  Lemma walk_rev t s:
+    rev (walk t s) = rev s ++ walk (revtree t) [::].
+  Proof.
+    elim: t s => [//= | x /= tl IHl tr IHr] s.
+    - by rewrite cats0.
+    - by rewrite IHl /= rev_cons cat_rcons IHr -catA walk_cat /=.
   Qed.
 
   Lemma flatten_rev t:
     rev (flatten t) = flatten (revtree t).
   Proof.
-    elim: t => [//= | x /= tl IHl tr IHr].
-    by rewrite rev_cat rev_cons cat_rcons IHl IHr.
+    by rewrite walk_rev /=.
   Qed.
 
-  Fixpoint flatten_m t : seq T :=
-    if t is tl -< x >- tr
-    then [:: x & flatten_m tl ++ flatten_m tr ]
-    else [::].
+
+  Fixpoint walk_m t s: seq T :=
+    if t is tl -< x >- tr 
+    then walk_m tr (walk_m tl (x :: s))
+    else s.
   
-  Fixpoint flatten_r t : seq T :=
+  Definition flatten_m t := walk_m t [::].
+
+  (* Fixpoint flatten_m t : seq T := *)
+  (*   if t is tl -< x >- tr *)
+  (*   then [:: x & flatten_m tl ++ flatten_m tr ] *)
+  (*   else [::]. *)
+
+  Fixpoint walk_r t s: seq T :=
     if t is tl -< x >- tr
-    then flatten_r tr ++ [:: x & flatten_r tl ]
-    else [::].
+    then walk_r tl (rcons (walk_r tr s) x)
+    else s.
+
+  Definition flatten_r t := walk_r t [::].
+  
+  (* Fixpoint flatten_r t : seq T := *)
+  (*   if t is tl -< x >- tr *)
+  (*   then flatten_r tr ++ [:: x & flatten_r tl ] *)
+  (*   else [::]. *)
   
   Definition flatten_l := flatten.
+
+  Lemma walk_r_cat t s1 s2:
+    s1 ++ walk_r t s2 = walk_r t (s1 ++ s2).
+  Proof.
+    elim: t s1 s2 => [//= | x /= tl IHl tr IHr] s1 s2.
+    by rewrite IHl /= -rcons_cat IHr.
+  Qed.
+
+  Lemma walk_lr t s:
+    rev (walk t s) = walk_r t (rev s).
+  Proof.
+    elim: t s => [//= | x /= tl IHl tr IHr] s.
+    by rewrite IHl /= rev_cons IHr.
+  Qed.
 
   Lemma flatten_lr t:
     rev (flatten_l t) = flatten_r t.
   Proof.
-    elim: t => [//= | x /= tl IHl tr IHr].
-    by rewrite rev_cat rev_cons cat_rcons IHl IHr.
+    apply walk_lr.
   Qed.
 
 
@@ -155,11 +209,17 @@ Section BinaryTree.
            p x + cl + cr
       else 0.
 
+    Lemma walk_count t s:
+      seq.count p (walk t s) = seq.count p s + count t.
+    Proof.
+      elim: t s => [//= | /= x tl IHl tr IHr] s.
+      by rewrite IHl /= IHr /= addnCA -addnA addnAC.
+    Qed.
+    
     Lemma flatten_count t:
       seq.count p (flatten t) = count t.
     Proof.
-      elim: t => [//= | /= x tl IHl tr IHr].
-      by rewrite count_cat /= addnCA IHl IHr addnA.
+      by rewrite walk_count /=.
     Qed.
 
 
@@ -168,11 +228,17 @@ Section BinaryTree.
       then p x || has tl || has tr 
       else false.
 
+    Lemma walk_has t s:
+      seq.has p (walk t s) = seq.has p s || has t.
+    Proof.
+      elim: t s => [//= | /= x tl IHl tr IHr] s; first by rewrite orbF.
+      by rewrite IHl /= IHr /= orbCA -orbA orbAC.
+    Qed.
+
     Lemma flatten_has t:
       seq.has p (flatten t) = has t.
     Proof.
-      elim: t => [//= | /= x tl IHl tr IHr].
-      by rewrite has_cat /= orbCA IHl IHr orbA.
+      by rewrite walk_has /=.
     Qed.
 
     Lemma has_bleaf:
@@ -193,12 +259,17 @@ Section BinaryTree.
       then p x && all tl && all tr
       else true.
 
+    Lemma walk_all t s:
+      seq.all p (walk t s) = seq.all p s && all t.
+    Proof.
+      elim: t s => [//= | /= x tl IHl tr IHr] s; first by rewrite andbT.
+      by rewrite IHl /= IHr /= andbCA -andbA andbAC.
+    Qed.
+
     Lemma flatten_all t:
       seq.all p (flatten t) = all t.
-
     Proof.
-      elim: t => [//= | /= x tl IHl tr IHr].
-      by rewrite all_cat /= andbCA IHl IHr andbA.
+      by rewrite walk_all /=.
     Qed.
 
     Lemma all_bleaf:
