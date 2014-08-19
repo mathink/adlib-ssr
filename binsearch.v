@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/14 0:59:58> *)
+(* Time-stamp: <2014/8/14 1:11:22> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -19,8 +19,8 @@ Require Import
 
 Require Import
   Adlibssr.btree
-  Adlibssr.sorted.
-
+  Adlibssr.sorted
+  Adlibssr.order.
 
 (* Implicity *)
 Set Implicit Arguments.
@@ -32,8 +32,6 @@ Unset Printing Implicit Defensive.
 (**
  ** Binary Search Tree 
  *)
-
-Require Import Adlibssr.order.
 
 (* Aux *)
 Definition flip {X Y Z: Type}(f: X -> Y -> Z): Y -> X -> Z :=

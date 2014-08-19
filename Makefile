@@ -83,6 +83,7 @@ endif
 VFILES:=tree.v\
   binheap.v\
   binsearch.v\
+  order.v\
   sorted.v\
   btree.v
 
