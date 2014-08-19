@@ -807,7 +807,7 @@ Section EqBtree.
   Definition swap {A B: Type}(p: A * B): B * A := (p.2,p.1).
   Arguments swap A B / p.
 
-  Lemma swap_involutive {A B: Type}(p: A * B):
+  Lemma swap_idempotent {A B: Type}(p: A * B):
     swap (swap p) = p.
   Proof.
     case: p => //.
@@ -816,7 +816,7 @@ Section EqBtree.
   Lemma swap_flip {A B: Type}(p: A * B) q:
     p = swap q -> swap p = q.
   Proof.
-    move=> ->; apply swap_involutive.
+    move=> ->; apply swap_idempotent.
   Qed.
   
   Lemma swap_app_fst {A A' B: Type}(f: A -> A')(p: A*B):
