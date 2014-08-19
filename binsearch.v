@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/14 0:59:58> *)
+(* Time-stamp: <2014/8/19 22:20:37> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -406,7 +406,7 @@ Section BinarySearchTree.
       x \in (lend_remove a t).2 -> x \in t.
     Proof.
       rewrite
-      -{1}[t]revtree_idempotent
+      -{1}[t]revtree_involutive
           lend_remove_revtree swap_app_fst /= mem_revtree.
       by move=> /mem_rend_remove Hin; rewrite -mem_revtree.
     Qed.      
