@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/20 0:50:42> *)
+(* Time-stamp: <2014/8/20 7:3:23> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -38,6 +38,28 @@ Definition flip {X Y Z: Type}(f: X -> Y -> Z): Y -> X -> Z :=
   fun y x => f x y.
 Arguments flip X Y Z f / y x.
 
+Inductive btR {T}(R: T -> T -> Prop)(a: T): btree T -> Prop :=
+| btR_bleaf: btR R a #
+| btR_bnode: forall x tl tr,
+                R a x -> btR R a tl -> btR R a tr ->
+                btR R a (tl -< x >- tr).
+Hint Constructors btR.
+
+Lemma btRP {T}(R: T -> T -> Prop) ord a t:
+  (forall x y, reflect (R x y) (ord x y)) ->
+  reflect (btR R a t) (all (ord a) t).
+Proof.
+  move=> ordP.
+  elim: t => [//=|/= x tl IHl tr IHr]; first by left.
+  move: IHl IHr => [Hl | Hnl] /= [Hr | Hnr] /=;
+    rewrite ?andbT ?andbF; try (right; move=> Hb).
+  - case: (ordP a x) => [HR | HnR]; [left; apply btR_bnode=> //| right].
+    move=> Hb; apply HnR; inversion Hb => //.
+  - apply Hnr; inversion Hb => //.
+  - apply Hnl; inversion Hb => //.
+  - apply Hnr; inversion Hb => //.
+Qed.
+
 Section BinarySearchTree.
 
   Variables (T: eqType)
@@ -45,225 +67,41 @@ Section BinarySearchTree.
             (ord: totalOrder T).
   Notation "x <= y" := (le x y).
   Hypothesis (ordP: forall x y, reflect (x <= y) (ord x y)).
+
+  Lemma ordP' x y: reflect (flip le x y) (ord^~ x y).
+  Proof.
+    simpl; apply ordP.
+  Qed.
   
   Implicit Types (t: btree T)(s: seq T).
 
-  (* Inductive isBst: btree T -> Prop := *)
-  (* | isBst_bleaf: isBst # *)
-  (* | isBst_bnode_one: *)
-  (*     forall x, isBst (#-< x >-#) *)
-  (* | isBst_bnode_l: *)
-  (*     forall x xl tl tr, *)
-  (*       xl <= x -> *)
-  (*       isBst (tl -< xl >- tr) ->  *)
-  (*       isBst ((tl -< xl >- tr)-< x >-#) *)
-  (* | isBst_bnode_r: *)
-  (*     forall x xr tl tr, *)
-  (*       x <= xr -> *)
-  (*       isBst (tl -< xr >- tr) ->  *)
-  (*       isBst (#-< x >-(tl -< xr >- tr)) *)
-  (* | isBst_bnode_bnode: *)
-  (*     forall x xl xr tll trl tlr trr, *)
-  (*       xl <= x -> x <= xr -> *)
-  (*       isBst (tll -< xl >- trl) -> *)
-  (*       isBst (tlr -< xr >- trr) -> *)
-  (*       isBst ((tll -< xl >- trl)-< x >-(tlr -< xr >- trr)). *)
-  (* Hint Constructors isBst. *)
+  Inductive isBst: btree T -> Prop :=
+  | isBst_bleaf: isBst #
+  | isBst_bnode: forall x tl tr,
+                   isBst tl -> btR (flip le) x tl ->
+                   isBst tr -> btR le x tr ->
+                   isBst (tl -< x >- tr).
+  Hint Constructors isBst.
 
   Fixpoint bst t: bool :=
     if t is tl -< x >- tr
     then (bst tl) && (all (flip ord x) tl) && (bst tr) && (all (ord x) tr)
     else true.
 
-  (* Lemma isBst_bnode x tl tr: *)
-  (*   (forall y, y \in tl -> ord y x) -> *)
-  (*   (forall y, y \in tr -> ord x y) -> *)
-  (*   isBst tl -> isBst tr -> isBst (tl -< x >- tr). *)
-  (* Proof. *)
-  (*   move=> Hl Hr Hbl Hbr. *)
-  (*   inversion Hbl => //=. *)
-  (*   -{ inversion Hbr => //=. *)
-  (*      + apply isBst_bnode_r => //; apply/ordP; apply Hr. *)
-  (*          by rewrite -H0 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*      + apply isBst_bnode_r => //; first (apply/ordP; apply Hr). *)
-  (*        * by rewrite -H2 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * by apply isBst_bnode_l => //. *)
-  (*      + apply isBst_bnode_r => //; first (apply/ordP; apply Hr). *)
-  (*        * by rewrite -H2 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * by apply isBst_bnode_r => //. *)
-  (*      + apply isBst_bnode_r => //; first (apply/ordP; apply Hr). *)
-  (*        * by rewrite -H4 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * by apply isBst_bnode_bnode => //. *)
-  (*    } *)
-  (*   -{ inversion Hbr => //=. *)
-  (*      + apply isBst_bnode_l => //; apply/ordP; apply Hl. *)
-  (*          by rewrite -H /= in_bnode /= -orbA; apply/orP; left. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H0 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H2 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H2 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H4 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*    }  *)
-  (*   -{ inversion Hbr => //=. *)
-  (*      + apply isBst_bnode_l => //; first (apply/ordP; apply Hl). *)
-  (*        * by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H2 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H4 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H4 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H6 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*    } *)
-  (*   -{ inversion Hbr => //=. *)
-  (*      + apply isBst_bnode_l => //; first (apply/ordP; apply Hl). *)
-  (*        * by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H2 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H4 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H4 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H1 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H6 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*    } *)
-  (*   -{ inversion Hbr => //=. *)
-  (*      + apply isBst_bnode_l => //; first (apply/ordP; apply Hl). *)
-  (*        * by rewrite -H3 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H3 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H4 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H3 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H6 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*        * apply isBst_bnode_l => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H3 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H6 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*        * apply isBst_bnode_r => //. *)
-  (*      + apply isBst_bnode_bnode => //. *)
-  (*        * apply/ordP; apply Hl. *)
-  (*            by rewrite -H3 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply/ordP; apply Hr. *)
-  (*            by rewrite -H8 /= in_bnode /= -orbA; apply/orP; left. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*        * apply isBst_bnode_bnode => //. *)
-  (*    } *)
-  (* Qed.     *)
-
-  (* Lemma isBst_ord_l x tl tr t: *)
-  (*   isBst t -> t = tl -< x >- tr -> *)
-  (*   isBst tl/\isBst tr /\ *)
-  (*   (forall y, y \in tl -> le y x)/\(forall y, y \in tr -> le x y). *)
-  (* Proof. *)
-  (*   elim: t x tl tr => [//=|/= x tl IHl tr IHr y tl' tr'] Hb [] <- <- <-. *)
-  (*   inversion Hb => //; subst; (repeat split) => //; try (move=> z; by rewrite in_bleaf); move=> z; *)
-  (*     rewrite in_bnode -orbA => /or3P [/eqP Heq| Hin | Hin ]; subst=> //. *)
-  (*   - apply/ordP; apply ord_transitive with xl; apply/ordP => //. *)
-  (*     by move: z Hin; apply IHl with tr0 => //. *)
-  (*   - apply/ordP; apply ord_transitive with xl; apply/ordP => //. *)
-  (*     move: z Hin; apply IHl with tr0 => //. *)
-  (*   - subst.  *)
-  (*     rewrite in_bnode -orbA => /or3P [/eqP->//|Hin|Hin]. *)
-  (*     + apply/ordP; apply ord_transitive with xl; apply/ordP => //. *)
-  (*       move: z Hin; apply IHl with tr0 => //. *)
-  (*     + apply/ordP; apply ord_transitive with xl; apply/ordP => //. *)
-  (*       move: z Hin; apply IHr with tl0 => //. *)
-  (*     apply IHl with tr'. *)
-    
-    
-  (* Lemma isBst_ord_l x tl tr: *)
-  (*   isBst (tl -< x >- tr) -> *)
-  (*   forall y, y \in tl -> le y x. *)
-  (* Proof. *)
-  (*   move=> Hb; inversion Hb=> y. *)
-  (*   - by rewrite in_bleaf. *)
-  (*   - rewrite in_bnode -orbA=> /or3P [/eqP->//|Hin|Hin]. *)
-  (*     subst. *)
-  (* Lemma bstP t: *)
-  (*   reflect (isBst t) (bst t). *)
-  (* Proof. *)
-  (*   elim: t => [//=|/= x tl IHl tr IHr]; first by left. *)
-  (*   case: IHl => IHl /=. *)
-  (*   - case: IHr => IHr /=. *)
-  (*     + rewrite andbT. *)
-  (*       case: (allP (flip ord x) tl) => Hal /=. *)
-  (*       * case: (allP (ord x) tr) => Har /=; first by left; apply isBst_bnode. *)
-  (*         right; move=> Hb; apply Har. *)
-  (*       * by right; move=> Hb; apply Hal; inversion Hb. *)
-  (*     + rewrite andbF /=. *)
-  (*       by right; move=> Hb; apply IHr; inversion Hb. *)
-  (*   - by right; move=> Hb; apply IHl; inversion Hb. *)
-  (* Qed. *)
+  Lemma bstP t: reflect (isBst t) (bst t).
+  Proof.
+    elim: t => [//=|/= x tl IHl tr IHr]; first by left.
+    move: IHl IHr => [Hbl | Hnbl] [Hbr | Hnbr] /=.
+    - rewrite andbT.
+      case: (btRP x tl ordP') => Hal /=;
+        last by right; move=> Hb; apply Hal; inversion Hb.
+      case: (btRP x tr ordP) => Har /=;
+        last by right; move=> Hb; apply Har; inversion Hb.
+        by left; apply isBst_bnode => //.
+    - by rewrite andbF /=; right; move=> Hb; apply Hnbr; inversion Hb.
+    - by right; move=> Hb; apply Hnbl; inversion Hb.
+    - by right; move=> Hb; apply Hnbl; inversion Hb.
+  Qed.
 
   Lemma bst_bnode x tl tr:
     bst (tl -< x >- tr) = (bst tl) && (all (flip ord x) tl) && (bst tr) && (all (ord x) tr).
