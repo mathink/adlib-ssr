@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/9 1:38:57> *)
+(* Time-stamp: <2014/8/19 22:22:34> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -86,7 +86,7 @@ Section BinaryTree.
     then revtree tr -< x >- revtree tl
     else #.
 
-  Lemma revtree_idempotent t:
+  Lemma revtree_involutive t:
     revtree (revtree t) = t.
   Proof.
     by elim: t => [| x /= tl -> tr ->].
@@ -736,7 +736,7 @@ Section EqBtree.
   Definition swap {A B: Type}(p: A * B): B * A := (p.2,p.1).
   Arguments swap A B / p.
 
-  Lemma swap_idempotent {A B: Type}(p: A * B):
+  Lemma swap_involutive {A B: Type}(p: A * B):
     swap (swap p) = p.
   Proof.
     case: p => //.
@@ -745,7 +745,7 @@ Section EqBtree.
   Lemma swap_flip {A B: Type}(p: A * B) q:
     p = swap q -> swap p = q.
   Proof.
-    move=> ->; apply swap_idempotent.
+    move=> ->; apply swap_involutive.
   Qed.
   
   Lemma swap_app_fst {A A' B: Type}(f: A -> A')(p: A*B):
@@ -773,7 +773,7 @@ Section EqBtree.
   Lemma rend_remove_revtree t a:
     rend_remove (revtree t) a = swap (revtree^2 (lend_remove a t)).
   Proof.
-    rewrite -{2}[t]revtree_idempotent swap_app_snd lend_remove_revtree swap_idempotent /= revtree_idempotent.
+    rewrite -{2}[t]revtree_involutive swap_app_snd lend_remove_revtree swap_involutive /= revtree_involutive.
     by case: (rend_remove (revtree t) a) => //.
   Qed.  
 
@@ -907,7 +907,7 @@ Section EqBtree.
   Lemma rem_root_r_revtree t:
     rem_root_r (revtree t) = revtree (rem_root_l t).
   Proof.
-    by rewrite -{2}[t]revtree_idempotent rem_root_l_revtree revtree_idempotent.
+    by rewrite -{2}[t]revtree_involutive rem_root_l_revtree revtree_involutive.
   Qed.
 
   Definition lend_merge a tl tr: btree T :=
@@ -934,3 +934,4 @@ Section EqBtree.
 End EqBtree.
 
 Definition inE := (mem_bnode1, in_bnode, inE).
+

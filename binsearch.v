@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/14 1:11:22> *)
+(* Time-stamp: <2014/8/20 7:3:23> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -15,7 +15,7 @@ Require Import
   Ssreflect.seq.
 
 Require Import
-        MathComp.path.
+  MathComp.path.
 
 Require Import
   Adlibssr.btree
@@ -38,41 +38,69 @@ Definition flip {X Y Z: Type}(f: X -> Y -> Z): Y -> X -> Z :=
   fun y x => f x y.
 Arguments flip X Y Z f / y x.
 
+Inductive btR {T}(R: T -> T -> Prop)(a: T): btree T -> Prop :=
+| btR_bleaf: btR R a #
+| btR_bnode: forall x tl tr,
+                R a x -> btR R a tl -> btR R a tr ->
+                btR R a (tl -< x >- tr).
+Hint Constructors btR.
+
+Lemma btRP {T}(R: T -> T -> Prop) ord a t:
+  (forall x y, reflect (R x y) (ord x y)) ->
+  reflect (btR R a t) (all (ord a) t).
+Proof.
+  move=> ordP.
+  elim: t => [//=|/= x tl IHl tr IHr]; first by left.
+  move: IHl IHr => [Hl | Hnl] /= [Hr | Hnr] /=;
+    rewrite ?andbT ?andbF; try (right; move=> Hb).
+  - case: (ordP a x) => [HR | HnR]; [left; apply btR_bnode=> //| right].
+    move=> Hb; apply HnR; inversion Hb => //.
+  - apply Hnr; inversion Hb => //.
+  - apply Hnl; inversion Hb => //.
+  - apply Hnr; inversion Hb => //.
+Qed.
+
 Section BinarySearchTree.
 
-  Variables (T: eqType)(ord: totalOrder T).
+  Variables (T: eqType)
+            (le: T -> T -> Prop)
+            (ord: totalOrder T).
+  Notation "x <= y" := (le x y).
+  Hypothesis (ordP: forall x y, reflect (x <= y) (ord x y)).
+
+  Lemma ordP' x y: reflect (flip le x y) (ord^~ x y).
+  Proof.
+    simpl; apply ordP.
+  Qed.
   
   Implicit Types (t: btree T)(s: seq T).
 
+  Inductive isBst: btree T -> Prop :=
+  | isBst_bleaf: isBst #
+  | isBst_bnode: forall x tl tr,
+                   isBst tl -> btR (flip le) x tl ->
+                   isBst tr -> btR le x tr ->
+                   isBst (tl -< x >- tr).
+  Hint Constructors isBst.
 
   Fixpoint bst t: bool :=
     if t is tl -< x >- tr
     then (bst tl) && (all (flip ord x) tl) && (bst tr) && (all (ord x) tr)
     else true.
 
-  Inductive isBst: btree T -> Prop :=
-  | isBst_bleaf: isBst #
-  | isBst_bnode:
-      forall x tl tr,
-        (forall y, y \in tl -> ord y x) ->
-        (forall y, y \in tr -> ord x y) ->
-        isBst tl -> isBst tr -> isBst (tl -< x >- tr).
-  Hint Constructors isBst.
-
-  Lemma bstP t:
-    reflect (isBst t) (bst t).
+  Lemma bstP t: reflect (isBst t) (bst t).
   Proof.
     elim: t => [//=|/= x tl IHl tr IHr]; first by left.
-    case: IHl => IHl /=.
-    - case: IHr => IHr /=.
-      + rewrite andbT.
-        case: (allP (flip ord x) tl) => Hal /=.
-        * case: (allP (ord x) tr) => Har /=; first by left; apply isBst_bnode.
-          by right; move=> Hb; apply Har; inversion Hb.
-        * by right; move=> Hb; apply Hal; inversion Hb.
-      + rewrite andbF /=.
-        by right; move=> Hb; apply IHr; inversion Hb.
-    - by right; move=> Hb; apply IHl; inversion Hb.
+    move: IHl IHr => [Hbl | Hnbl] [Hbr | Hnbr] /=.
+    - rewrite andbT.
+      case: (btRP x tl ordP') => Hal /=;
+        last by right; move=> Hb; apply Hal; inversion Hb.
+      case: (btRP x tr ordP) => Har /=;
+        last by right; move=> Hb; apply Har; inversion Hb.
+        by left; apply isBst_bnode => //.
+    - by rewrite andbF /=; right; move=> Hb; apply Hnbr; inversion Hb.
+    - by right; move=> Hb; apply Hnbl; inversion Hb.
+    - by right; move=> Hb; apply Hnbl; inversion Hb.
   Qed.
 
   Lemma bst_bnode x tl tr:
@@ -404,7 +432,7 @@ Section BinarySearchTree.
       x \in (lend_remove a t).2 -> x \in t.
     Proof.
       rewrite
-      -{1}[t]revtree_idempotent
+      -{1}[t]revtree_involutive
           lend_remove_revtree swap_app_fst /= mem_revtree.
       by move=> /mem_rend_remove Hin; rewrite -mem_revtree.
     Qed.      
@@ -551,6 +579,7 @@ Section BinarySearchTree.
       by rewrite IHs // !flatten_count -!btsort_insert_count insert_count addnCA.
     Qed.
 
+
     Lemma btsort_perm_eq s:
       perm_eq s (btsort s).
     Proof.
@@ -562,8 +591,7 @@ Section BinarySearchTree.
       - by rewrite btsort_insert_perm.
     Qed.
 
-
-  End Operations.
+  End Operations.  
 
 
 
