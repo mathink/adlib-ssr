@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="coqdoc.css" rel="stylesheet" type="text/css"/>
+<title>Adlibssr.monad</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Adlibssr.monad</h1>
+
+<div class="code">
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssreflect</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrbool</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrfun</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.eqtype</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.ssrnat</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.seq</span><br/>
+&nbsp;&nbsp;<span class="id" type="library">Ssreflect.fintype</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" type="keyword">Set Implicit Arguments</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Reserved Notation</span> "m &gt;&gt;= f" (<span class="id" type="tactic">at</span> <span class="id" type="keyword">level</span> 57, <span class="id" type="tactic">left</span> <span class="id" type="keyword">associativity</span>).<br/>
+<span class="id" type="keyword">Class</span> <a name="eqMonad"><span class="id" type="record">eqMonad</span></a> (<span class="id" type="var">m</span>: <span class="id" type="abbreviation">eqType</span> -&gt; <span class="id" type="abbreviation">eqType</span>) :=<br/>
+&nbsp;&nbsp;{ <a name="emb"><span class="id" type="projection">emb</span></a> {<span class="id" type="var">X</span>: <span class="id" type="abbreviation">eqType</span>}: <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a name="bind"><span class="id" type="projection">bind</span></a> {<span class="id" type="var">X</span> <span class="id" type="var">Y</span>: <span class="id" type="abbreviation">eqType</span>}(<span class="id" type="var">f</span>: <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#Y"><span class="id" type="variable">Y</span></a>): <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#Y"><span class="id" type="variable">Y</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">where</span> "m &gt;&gt;= f" := (<a class="idref" href="Adlibssr.monad.html#bind"><span class="id" type="method">bind</span></a> <span class="id" type="var">f</span> <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a>);<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a name="emb_bind"><span class="id" type="projection">emb_bind</span></a> {<span class="id" type="var">X</span> <span class="id" type="var">Y</span>: <span class="id" type="abbreviation">eqType</span>}(<span class="id" type="var">f</span>: <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#Y"><span class="id" type="variable">Y</span></a>)(<span class="id" type="var">x</span>: <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a>):<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="notation">(</span><a class="idref" href="Adlibssr.monad.html#emb"><span class="id" type="method">emb</span></a> <a class="idref" href="Adlibssr.monad.html#x"><span class="id" type="variable">x</span></a> <a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">&gt;&gt;=</span></a> <a class="idref" href="Adlibssr.monad.html#f"><span class="id" type="variable">f</span></a><span class="id" type="notation">)</span> <span class="id" type="notation">==</span> <a class="idref" href="Adlibssr.monad.html#f"><span class="id" type="variable">f</span></a> <a class="idref" href="Adlibssr.monad.html#x"><span class="id" type="variable">x</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a name="bind_emb"><span class="id" type="projection">bind_emb</span></a> {<span class="id" type="var">X</span>: <span class="id" type="abbreviation">eqType</span>} (<span class="id" type="var">mx</span>: <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a>):<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="notation">(</span><a class="idref" href="Adlibssr.monad.html#mx"><span class="id" type="variable">mx</span></a> <a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">&gt;&gt;=</span></a> <a class="idref" href="Adlibssr.monad.html#emb"><span class="id" type="method">emb</span></a><span class="id" type="notation">)</span> <span class="id" type="notation">==</span> <a class="idref" href="Adlibssr.monad.html#mx"><span class="id" type="variable">mx</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a name="bind_assoc"><span class="id" type="projection">bind_assoc</span></a> {<span class="id" type="var">X</span> <span class="id" type="var">Y</span> <span class="id" type="var">Z</span>: <span class="id" type="abbreviation">eqType</span>}(<span class="id" type="var">f</span>: <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#Y"><span class="id" type="variable">Y</span></a>)(<span class="id" type="var">g</span>: <a class="idref" href="Adlibssr.monad.html#Y"><span class="id" type="variable">Y</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#Z"><span class="id" type="variable">Z</span></a>)(<span class="id" type="var">mx</span>: <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a>):<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Adlibssr.monad.html#mx"><span class="id" type="variable">mx</span></a> <a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">&gt;&gt;=</span></a> <a class="idref" href="Adlibssr.monad.html#f"><span class="id" type="variable">f</span></a> <a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">&gt;&gt;=</span></a> <a class="idref" href="Adlibssr.monad.html#g"><span class="id" type="variable">g</span></a> <span class="id" type="notation">==</span> <a class="idref" href="Adlibssr.monad.html#mx"><span class="id" type="variable">mx</span></a> <a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">&gt;&gt;=</span></a> <a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.monad.html#bind"><span class="id" type="method">bind</span></a> <a class="idref" href="Adlibssr.monad.html#g"><span class="id" type="variable">g</span></a> <span class="id" type="notation">\</span><span class="id" type="notation">o</span> <a class="idref" href="Adlibssr.monad.html#f"><span class="id" type="variable">f</span></a><a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">)</span></a> }.<br/>
+<span class="id" type="keyword">Notation</span> <a name="::x_'>>='_x"><span class="id" type="notation">"</span></a>m &gt;&gt;= f" := (<a class="idref" href="Adlibssr.monad.html#bind"><span class="id" type="method">bind</span></a> <span class="id" type="var">f</span> <span class="id" type="var">m</span>) (<span class="id" type="tactic">at</span> <span class="id" type="keyword">level</span> 57, <span class="id" type="tactic">left</span> <span class="id" type="keyword">associativity</span>).<br/>
+<span class="id" type="keyword">Notation</span> <a name="::x_'<-'_x_';'_x"><span class="id" type="notation">"</span></a>x &lt;- m ; p" := (<span class="id" type="var">m</span> <a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">&gt;&gt;=</span></a> <span class="id" type="keyword">fun</span> <span class="id" type="var">x</span> =&gt; <span class="id" type="var">p</span>) (<span class="id" type="tactic">at</span> <span class="id" type="keyword">level</span> 65, <span class="id" type="tactic">right</span> <span class="id" type="keyword">associativity</span>).<br/>
+
+<br/>
+<span class="id" type="keyword">Program Instance</span> <a name="eqMaybe"><span class="id" type="instance">eqMaybe</span></a>: <a class="idref" href="Adlibssr.monad.html#eqMonad"><span class="id" type="class">eqMonad</span></a> <span class="id" type="definition">option_eqType</span> :=<br/>
+&nbsp;&nbsp;{ <a class="idref" href="Adlibssr.monad.html#emb"><span class="id" type="method">emb</span></a> <span class="id" type="var">X</span> <span class="id" type="var">x</span> := <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#Some"><span class="id" type="constructor">Some</span></a> <a class="idref" href="Adlibssr.monad.html#x"><span class="id" type="variable">x</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Adlibssr.monad.html#bind"><span class="id" type="method">bind</span></a> <span class="id" type="var">X</span> <span class="id" type="var">Y</span> <span class="id" type="var">f</span> <span class="id" type="var">mx</span> := <span class="id" type="keyword">if</span> <a class="idref" href="Adlibssr.monad.html#mx"><span class="id" type="variable">mx</span></a> <span class="id" type="var">is</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#Some"><span class="id" type="constructor">Some</span></a> <span class="id" type="var">x</span> <span class="id" type="keyword">then</span> <a class="idref" href="Adlibssr.monad.html#f"><span class="id" type="variable">f</span></a> <span class="id" type="var">x</span> <span class="id" type="keyword">else</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#None"><span class="id" type="constructor">None</span></a> }.<br/>
+
+<br/>
+<span class="id" type="keyword">Class</span> <a name="eqMonad_F"><span class="id" type="record">eqMonad_F</span></a> `(<span class="id" type="var">monad</span>: <a class="idref" href="Adlibssr.monad.html#eqMonad"><span class="id" type="class">eqMonad</span></a> <span class="id" type="var">m</span>) :=<br/>
+&nbsp;&nbsp;{ <a name="failure"><span class="id" type="projection">failure</span></a> {<span class="id" type="var">X</span>: <span class="id" type="abbreviation">eqType</span>}: <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a name="handle"><span class="id" type="projection">handle</span></a> {<span class="id" type="var">X</span>: <span class="id" type="abbreviation">eqType</span>}: <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a>;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a name="failure_end"><span class="id" type="projection">failure_end</span></a> {<span class="id" type="var">X</span> <span class="id" type="var">Y</span>: <span class="id" type="abbreviation">eqType</span>}(<span class="id" type="var">f</span>: <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a> -&gt; <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#Y"><span class="id" type="variable">Y</span></a>):<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Adlibssr.monad.html#failure"><span class="id" type="method">failure</span></a> <a class="idref" href="Adlibssr.monad.html#::x_'>>='_x"><span class="id" type="notation">&gt;&gt;=</span></a> <a class="idref" href="Adlibssr.monad.html#f"><span class="id" type="variable">f</span></a> <span class="id" type="notation">==</span> <a class="idref" href="Adlibssr.monad.html#failure"><span class="id" type="method">failure</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a name="handle_failure"><span class="id" type="projection">handle_failure</span></a> {<span class="id" type="var">X</span>: <span class="id" type="abbreviation">eqType</span>}(<span class="id" type="var">mx</span>: <a class="idref" href="Adlibssr.monad.html#m"><span class="id" type="variable">m</span></a> <a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a>):<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Adlibssr.monad.html#handle"><span class="id" type="method">handle</span></a> <a class="idref" href="Adlibssr.monad.html#failure"><span class="id" type="method">failure</span></a> <a class="idref" href="Adlibssr.monad.html#mx"><span class="id" type="variable">mx</span></a> <span class="id" type="notation">==</span> <a class="idref" href="Adlibssr.monad.html#mx"><span class="id" type="variable">mx</span></a> }.<br/>
+
+<br/>
+<span class="id" type="keyword">Program Instance</span> <a name="eqMaybe_F"><span class="id" type="instance">eqMaybe_F</span></a>: <a class="idref" href="Adlibssr.monad.html#eqMonad_F"><span class="id" type="class">eqMonad_F</span></a> <a class="idref" href="Adlibssr.monad.html#eqMaybe"><span class="id" type="instance">eqMaybe</span></a> :=<br/>
+&nbsp;&nbsp;{ <a class="idref" href="Adlibssr.monad.html#failure"><span class="id" type="method">failure</span></a> <span class="id" type="var">X</span> := <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#None"><span class="id" type="constructor">None</span></a> (<span class="id" type="var">A</span>:=<a class="idref" href="Adlibssr.monad.html#X"><span class="id" type="variable">X</span></a>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Adlibssr.monad.html#handle"><span class="id" type="method">handle</span></a> <span class="id" type="var">X</span> <span class="id" type="var">mx1</span> <span class="id" type="var">mx2</span> := <span class="id" type="keyword">if</span> <a class="idref" href="Adlibssr.monad.html#mx1"><span class="id" type="variable">mx1</span></a> <span class="id" type="var">is</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#None"><span class="id" type="constructor">None</span></a> <span class="id" type="keyword">then</span> <a class="idref" href="Adlibssr.monad.html#mx2"><span class="id" type="variable">mx2</span></a> <span class="id" type="keyword">else</span> <a class="idref" href="Adlibssr.monad.html#mx1"><span class="id" type="variable">mx1</span></a> }.<br/>
+
+<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

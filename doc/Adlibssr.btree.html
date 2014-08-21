@@ -22,7 +22,7 @@
 </div>
 
 <div class="doc">
-<a name="lab4"></a><h1 class="section">Binary tree on Coq with SSReflect</h1>
+<a name="lab3"></a><h1 class="section">Binary tree on Coq with SSReflect</h1>
 
  
 </div>
@@ -44,7 +44,7 @@
 </div>
 
 <div class="doc">
-<a name="lab5"></a><h2 class="section">Definitions of Type of Binary-tree</h2>
+<a name="lab4"></a><h2 class="section">Definitions of Type of Binary-tree</h2>
 
 </div>
 <div class="code">
@@ -110,7 +110,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">else</span> <a class="idref" href="Adlibssr.btree.html#::'#'"><span class="id" type="notation">#</span></a>.<br/>
 
 <br/>
-&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="revtree_idempotent"><span class="id" type="lemma">revtree_idempotent</span></a> <span class="id" type="var">t</span>:<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="revtree_involutive"><span class="id" type="lemma">revtree_involutive</span></a> <span class="id" type="var">t</span>:<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Adlibssr.btree.html#revtree"><span class="id" type="definition">revtree</span></a> (<a class="idref" href="Adlibssr.btree.html#revtree"><span class="id" type="definition">revtree</span></a> <a class="idref" href="Adlibssr.btree.html#t"><span class="id" type="variable">t</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Adlibssr.btree.html#t"><span class="id" type="variable">t</span></a>.<br/>
 
 <br/>
@@ -293,7 +293,7 @@
 
 <div class="paragraph"> </div>
 
-<a name="lab6"></a><h2 class="section">Constructing Instanse of <span class="inlinecode"><span class="id" type="var">eqtype</span></span> for <span class="inlinecode"><span class="id" type="var">btree</span></span></h2>
+<a name="lab5"></a><h2 class="section">Constructing Instanse of <span class="inlinecode"><span class="id" type="var">eqtype</span></span> for <span class="inlinecode"><span class="id" type="var">btree</span></span></h2>
 
  
 </div>
@@ -565,7 +565,7 @@
 &nbsp;&nbsp;<span class="id" type="keyword">Definition</span> <a name="swap"><span class="id" type="definition">swap</span></a> {<span class="id" type="var">A</span> <span class="id" type="var">B</span>: <span class="id" type="keyword">Type</span>}(<span class="id" type="var">p</span>: <a class="idref" href="Adlibssr.btree.html#A"><span class="id" type="variable">A</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:type_scope:x_'*'_x"><span class="id" type="notation">*</span></a> <a class="idref" href="Adlibssr.btree.html#B"><span class="id" type="variable">B</span></a>): <a class="idref" href="Adlibssr.btree.html#B"><span class="id" type="variable">B</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:type_scope:x_'*'_x"><span class="id" type="notation">*</span></a> <a class="idref" href="Adlibssr.btree.html#A"><span class="id" type="variable">A</span></a> := <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.btree.html#p"><span class="id" type="variable">p</span></a><span class="id" type="notation">.2</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">,</span></a><a class="idref" href="Adlibssr.btree.html#p"><span class="id" type="variable">p</span></a><span class="id" type="notation">.1</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">)</span></a>.<br/>
 
 <br/>
-&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="swap_idempotent"><span class="id" type="lemma">swap_idempotent</span></a> {<span class="id" type="var">A</span> <span class="id" type="var">B</span>: <span class="id" type="keyword">Type</span>}(<span class="id" type="var">p</span>: <a class="idref" href="Adlibssr.btree.html#A"><span class="id" type="variable">A</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:type_scope:x_'*'_x"><span class="id" type="notation">*</span></a> <a class="idref" href="Adlibssr.btree.html#B"><span class="id" type="variable">B</span></a>):<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <a name="swap_involutive"><span class="id" type="lemma">swap_involutive</span></a> {<span class="id" type="var">A</span> <span class="id" type="var">B</span>: <span class="id" type="keyword">Type</span>}(<span class="id" type="var">p</span>: <a class="idref" href="Adlibssr.btree.html#A"><span class="id" type="variable">A</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:type_scope:x_'*'_x"><span class="id" type="notation">*</span></a> <a class="idref" href="Adlibssr.btree.html#B"><span class="id" type="variable">B</span></a>):<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Adlibssr.btree.html#swap"><span class="id" type="definition">swap</span></a> (<a class="idref" href="Adlibssr.btree.html#swap"><span class="id" type="definition">swap</span></a> <a class="idref" href="Adlibssr.btree.html#p"><span class="id" type="variable">p</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Adlibssr.btree.html#p"><span class="id" type="variable">p</span></a>.<br/>
 
 <br/>
@@ -672,6 +672,8 @@
 
 <br/>
 <span class="id" type="keyword">Definition</span> <a name="inE"><span class="id" type="definition">inE</span></a> := <a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">(</span></a><a class="idref" href="Adlibssr.btree.html#mem_bnode1"><span class="id" type="lemma">mem_bnode1</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">,</span></a> <a class="idref" href="Adlibssr.btree.html#in_bnode"><span class="id" type="lemma">in_bnode</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">,</span></a> <span class="id" type="definition">inE</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl4/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">)</span></a>.<br/>
+
+<br/>
 </div>
 </div>
 
