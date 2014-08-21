@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/19 22:20:14> *)
+(* Time-stamp: <2014/8/19 22:22:34> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -934,3 +934,4 @@ Section EqBtree.
 End EqBtree.
 
 Definition inE := (mem_bnode1, in_bnode, inE).
+
