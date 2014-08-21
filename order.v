@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/14 1:3:24> *)
+(* Time-stamp: <2014/8/22 1:34:0> *)
 (*
   order.v 
   - mathink : Author
@@ -23,7 +23,7 @@ Structure totalOrder (T: Type) :=
     ord_antisymmetric: antisymmetric total_ord;
     ord_transitive: transitive total_ord;
     ord_total: total total_ord }.
-
+Notation makeTotalOrder ord := (@Build_totalOrder _ ord _ _ _).
 Lemma ord_reflexive T (ord: totalOrder T): reflexive ord.
 Proof.
   move=> x.
