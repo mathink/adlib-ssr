@@ -28,6 +28,7 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 
+    Functional Scheme rem_root_r_ind := Induction for rem_root_r Sort Prop.
 
 (**
  ** Binary Search Tree 
@@ -89,6 +90,7 @@ Section BinarySearchTree.
     else true.
   Functional Scheme bst_ind := Induction for bst Sort Prop.
 
+
   Lemma bstP t: reflect (isBst t) (bst t).
   Proof.
     elim: t => [//=|/= x tl IHl tr IHr]; first by left.
@@ -121,11 +123,8 @@ Section BinarySearchTree.
     sorted ord (flatten t) = bst t.
   Proof.
     elim: t => [//= | /= x tl IHl tr IHr].
-    rewrite sorted_cat_cons // sorted_rcons // sorted_cons1 // IHl // IHr
-    // !flatten_all -andbCA andbC.
-    apply andb_id2r => Hallr.
-    apply andb_id2r => Hbstr.
-    by apply andbC.
+      by rewrite sorted_cat_cons // sorted_rcons // sorted_cons1 // IHl // IHr
+                 // !flatten_all andbA andbAC [_ && bst tl]andbC.
   Qed.
 
 
@@ -351,6 +350,8 @@ Section BinarySearchTree.
                 then (delete_l a tl) -< x >- tr
                 else tl -< x >- (delete_l a tr)
       else #.
+    Functional Scheme delete_l_ind := Induction for delete_l Sort Prop.
+
 
     Lemma bst_lend_remove a t:
       bst t -> bst (lend_remove a t).2.
@@ -384,11 +385,11 @@ Section BinarySearchTree.
       bst t -> bst (rem_root_r t).
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr].
-      rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
       remember (rend_remove tl x).
       case: p Heqp => t node Heq /=.
-      rewrite -!andbA; apply/and4P; split; try done.
-      - by move: (bst_rend_remove x Hbl); rewrite -Heq.
+      rewrite -!andbA => /and4P [Hbl Hal -> Har] /=.
+      move: (bst_rend_remove x Hbl); rewrite -Heq/= => -> /=.
+      apply/andP; split.
       - apply/allP => y Hin.
         move: (rend_remove_rend tl x); rewrite -Heq => /= ->.
         move: (bst_rend Hal Hbl) => /allP; apply.
@@ -405,22 +406,15 @@ Section BinarySearchTree.
     Lemma all_delete_l p a t:
        all p t -> all p (delete_l a t).
     Proof.
-      elim: t => [//=|/= x tl IHl tr IHr].
-      case: (a =P x) => [<-{x}|Hneq];
-        rewrite -!andbA => /and3P [Hp Hal Har].
-      - remember (rend_remove tl a).
-        case: p0 Heqp0 => t x Heq /=.
-        rewrite -!andbA; apply/and3P; split; try done.
-        + move: (rend_remove_rend tl a) (mem_rend tl a);
-          rewrite -Heq /= => <- /orP [/eqP->//|Hin].
-          by move: Hal => /allP; apply.
-        + apply/allP => y Hin.
-          move: Hal => /allP; apply.
-          by move: (@mem_rend_remove _ y tl a); rewrite -Heq; apply.
-      - case: (ord! a x) => /=; rewrite -!andbA;
-          apply/and3P; split; try done.
-        + by apply IHl.
-        + by apply IHr.
+      functional induction (delete_l a t) => //=; rewrite -!andbA.
+      - remember (rend_remove tl x) as tn.
+        case: tn Heqtn => t node Heq /= /and3P [Hp /allP Hal ->]; rewrite andbT.
+        + apply/andP; split.
+          * by move: (rend_remove_rend tl x) (mem_rend tl x);
+            rewrite -Heq/= => <- /orP [/eqP->//|Hin]; apply Hal.
+          * by apply/allP=> y Hin; apply Hal; apply mem_rend_remove with x; rewrite -Heq.
+      - by move=> /and3P [-> /IHb-> ->].
+      - by move=> /and3P [-> -> /IHb->].
     Qed.
       
     Lemma bst_delete_l a t:

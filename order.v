@@ -18,7 +18,8 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Structure totalOrder (T: Type) :=
-  { total_ord:> rel T;
+  Build_totalOrder
+    { total_ord:> rel T;
 
     ord_antisymmetric: antisymmetric total_ord;
     ord_transitive: transitive total_ord;
