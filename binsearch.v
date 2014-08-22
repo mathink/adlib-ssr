@@ -90,7 +90,6 @@ Section BinarySearchTree.
     else true.
   Functional Scheme bst_ind := Induction for bst Sort Prop.
 
-  Functional Scheme bst_ind := Induction for bst Sort Prop.
 
   Lemma bstP t: reflect (isBst t) (bst t).
   Proof.
@@ -183,14 +182,9 @@ Section BinarySearchTree.
       else #-< a >-#.
     Functional Scheme insert_ind := Induction for insert Sort Prop.
 
-    Functional Scheme insert_ind := Induction for insert Sort Prop.
-
     Lemma mem_insert a b t:
       b \in (insert a t) = (b == a) || (b \in t).
     Proof.
-<<<<<<< HEAD
-      by functional induction (insert a t) => //=; rewrite !in_bnode /= IHb0 orbCA -!orbA.
-=======
       by functional induction (insert a t)
         as [| _ x tl tr _ _ IH
             | _ x tl tr _ _ IH] => //;
@@ -204,26 +198,11 @@ Section BinarySearchTree.
         as [| _ x tl tr _ Hord IH
             | _ x tl tr _ Hord IH] => //=;
         rewrite ?andbT // IH andbCA -!andbA.
->>>>>>> 6075c89b3d135595c3ad1a4fe11783c9d9d2601b
     Qed.
-
-    Lemma all_insert p a t:
-      all p (insert a t) = p a && all p t.
-    Proof.
-      functional induction (insert a t) => /=;
-        first rewrite andbT //; by rewrite IHb andbCA ?andbA.
-    Qed.    
 
     Lemma bst_bst_insert a t:
       bst t -> bst (insert a t).
     Proof.
-<<<<<<< HEAD
-      functional induction (insert a t) => //=; rewrite -!andbA all_insert.
-      - move=> /and4P [/IHb-> -> -> ->] /=; rewrite !andbT.
-        by move: e0 => /eqP; rewrite eqb_id => /andP [] //.
-      - move=> /and4P [-> -> /IHb-> ->] /=; rewrite !andbT.
-        by move: e0 => /negbT; rewrite sord_neg_ord. 
-=======
       functional induction (insert a t)
         as [| _ x tl tr _ Hord IH
             | _ x tl tr _ Hord IH] => //=; rewrite -!andbA all_insert;
@@ -232,23 +211,16 @@ Section BinarySearchTree.
       rewrite /= !andbT //.
       - by move: Hord=>/eqP; rewrite eqb_id=>/andP []//.
       - by rewrite -sord_neg_ord Hord.
->>>>>>> 6075c89b3d135595c3ad1a4fe11783c9d9d2601b
     Qed.
 
     Lemma bst_insert_bst a t:
       bst (insert a t) -> bst t.
     Proof.
-<<<<<<< HEAD
-      functional induction (insert a t) => //=; rewrite -!andbA all_insert.
-      - by move=> /and4P [/IHb-> /andP [Hord Hal] -> ->] /=; rewrite andbT.
-      - by move=> /and4P [-> -> /IHb-> /andP [Hord Har]] /=.
-=======
       by functional induction (insert a t)
         as [| _ x tl tr _ Hord IH
             | _ x tl tr _ Hord IH] => //=; rewrite -!andbA all_insert;
       [ move=> /and4P [/IH-> /andP [Ho ->] -> ->]
       | move=> /and4P [-> -> /IH-> /andP [Ho ->]]].
->>>>>>> 6075c89b3d135595c3ad1a4fe11783c9d9d2601b
     Qed.
 
     Lemma bst_insert a t:
@@ -263,25 +235,16 @@ Section BinarySearchTree.
     Lemma in_insert a t:
       a \in insert a t.
     Proof.
-<<<<<<< HEAD
-      functional induction (insert a t); first (by rewrite mem_bnode1);
-      by rewrite in_bnode IHb orbT //.
-=======
       by functional induction (insert a t)
         as [| _ x tl tr _ Hord IH
             | _ x tl tr _ Hord IH] => //=;
         rewrite ?mem_bnode1 ?in_bnode //= IH orbT //.
->>>>>>> 6075c89b3d135595c3ad1a4fe11783c9d9d2601b
     Qed.
 
     Lemma search_insert a t:
       bst t -> search a (insert a t).
     Proof.
-<<<<<<< HEAD
-      by move=> Hbst; rewrite -bst_search; [apply: in_insert | apply: bst_bst_insert].
-=======
         by move=> Hbst; rewrite -bst_search; [apply: in_insert | apply: bst_bst_insert].
->>>>>>> 6075c89b3d135595c3ad1a4fe11783c9d9d2601b
     Qed.
     
   (* Sorting by using binary-search tree *)
