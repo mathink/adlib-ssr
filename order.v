@@ -25,7 +25,6 @@ Structure totalOrder (T: Type) :=
     ord_transitive: transitive total_ord;
     ord_total: total total_ord }.
 Notation makeTotalOrder ord := (@Build_totalOrder _ ord _ _ _).
-
 Lemma ord_reflexive T (ord: totalOrder T): reflexive ord.
 Proof.
   move=> x.
