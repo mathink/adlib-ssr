@@ -104,12 +104,11 @@ Section BinaryTree.
     by elim: t => [//= | _ /= tl -> tr -> ]; rewrite maxnC.
   Qed.
 
-  
   Fixpoint flatten t : seq T :=
     if t is tl -< x >- tr
     then flatten tl ++ [:: x & flatten tr ]
     else [::].
-
+  
   Lemma flatten_size t:
     seq.size (flatten t) = size t.
   Proof.
@@ -725,6 +724,7 @@ Section EqBtree.
          else let (node, t') := lend_remove x tl in
               (node , t' -< x >- tr)
     else (a, #).
+  Functional Scheme lend_remove_ind := Induction for lend_remove Sort Prop.
 
   Fixpoint rend_remove t a: btree T * T :=
     if t is tl -< x >- tr
@@ -732,6 +732,7 @@ Section EqBtree.
          else let (t', node) := rend_remove tr x in
               (tl -< x >- t', node)
     else (#, a).
+  Functional Scheme rend_remove_ind := Induction for rend_remove Sort Prop.
 
   Definition swap {A B: Type}(p: A * B): B * A := (p.2,p.1).
   Arguments swap A B / p.

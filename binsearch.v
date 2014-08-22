@@ -28,6 +28,7 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 
+    Functional Scheme rem_root_r_ind := Induction for rem_root_r Sort Prop.
 
 (**
  ** Binary Search Tree 
@@ -88,6 +89,8 @@ Section BinarySearchTree.
     then (bst tl) && (all (flip ord x) tl) && (bst tr) && (all (ord x) tr)
     else true.
 
+  Functional Scheme bst_ind := Induction for bst Sort Prop.
+
   Lemma bstP t: reflect (isBst t) (bst t).
   Proof.
     elim: t => [//=|/= x tl IHl tr IHr]; first by left.
@@ -120,11 +123,8 @@ Section BinarySearchTree.
     sorted ord (flatten t) = bst t.
   Proof.
     elim: t => [//= | /= x tl IHl tr IHr].
-    rewrite sorted_cat_cons // sorted_rcons // sorted_cons1 // IHl // IHr
-    // !flatten_all -andbCA andbC.
-    apply andb_id2r => Hallr.
-    apply andb_id2r => Hbstr.
-    by apply andbC.
+      by rewrite sorted_cat_cons // sorted_rcons // sorted_cons1 // IHl // IHr
+                 // !flatten_all andbA andbAC [_ && bst tl]andbC.
   Qed.
 
 
@@ -174,48 +174,37 @@ Section BinarySearchTree.
            else tl -< x >- (insert a tr)
       else #-< a >-#.
 
+    Functional Scheme insert_ind := Induction for insert Sort Prop.
+
     Lemma mem_insert a b t:
       b \in (insert a t) = (b == a) || (b \in t).
     Proof.
-      elim: t => [//=|/= x tl IHl tr IHr].
-      case: (ord! a x) => /=.
-      - by rewrite !in_bnode IHl orbCA // !orbA.
-      - by rewrite !in_bnode IHr orbCA // !orbA.
+      by functional induction (insert a t) => //=; rewrite !in_bnode /= IHb0 orbCA -!orbA.
     Qed.
+
+    Lemma all_insert p a t:
+      all p (insert a t) = p a && all p t.
+    Proof.
+      functional induction (insert a t) => /=;
+        first rewrite andbT //; by rewrite IHb andbCA ?andbA.
+    Qed.    
 
     Lemma bst_bst_insert a t:
       bst t -> bst (insert a t).
     Proof.
-      elim: t => [//=|/= x tl IHl tr IHr].
-      rewrite -!andbA => /and4P [Hbstl Halll Hbstr Hallr].
-      case Hord: (ord! a x) => /=; rewrite -!andbA; apply/and4P.
-      - repeat split; move=>//=; first by apply IHl.
-        apply/allP=> y Hin.
-        move: Hin; rewrite mem_insert => /orP [/eqP-> | Hin] //=.
-        + by move: Hord => /eqP; rewrite eqb_id => /andP [].
-        + by move: Halll => /allP H; apply H.
-      - repeat split; move=>//=; first by apply IHr.
-        apply/allP=> y Hin.
-        move: Hord => /negbT; rewrite sord_neg_ord => Hord.
-        move: Hin; rewrite mem_insert => /orP [/eqP-> | Hin] //=.
-        by move: Hallr => /allP H; apply H.
+      functional induction (insert a t) => //=; rewrite -!andbA all_insert.
+      - move=> /and4P [/IHb-> -> -> ->] /=; rewrite !andbT.
+        by move: e0 => /eqP; rewrite eqb_id => /andP [] //.
+      - move=> /and4P [-> -> /IHb-> ->] /=; rewrite !andbT.
+        by move: e0 => /negbT; rewrite sord_neg_ord. 
     Qed.
 
     Lemma bst_insert_bst a t:
       bst (insert a t) -> bst t.
     Proof.
-      elim: t => [//=|/= x tl IHl tr IHr].
-      case Hord: (ord ! a x) => /=;
-        rewrite -!andbA => /and4P [Hbstl Halll Hbstr Hallr];
-          apply /and4P; repeat split; move=> //=.
-      - by apply IHl.
-      - apply/allP=> y Hin.
-        move: Halll => /allP Halll; apply Halll.
-        by rewrite mem_insert Hin orbT.
-      - by apply IHr.
-      - apply/allP=> y Hin.
-        move: Hallr => /allP Hallr; apply Hallr.
-        by rewrite mem_insert Hin orbT.
+      functional induction (insert a t) => //=; rewrite -!andbA all_insert.
+      - by move=> /and4P [/IHb-> /andP [Hord Hal] -> ->] /=; rewrite andbT.
+      - by move=> /and4P [-> -> /IHb-> /andP [Hord Har]] /=.
     Qed.
 
     Lemma bst_insert a t:
@@ -230,15 +219,14 @@ Section BinarySearchTree.
     Lemma in_insert a t:
       a \in insert a t.
     Proof.
-      elim: t => [//=|/= x tl IHl tr IHr]; first by rewrite mem_bnode1.
-      by case: (ord! a x); rewrite in_bnode ?IHl ?IHr /= orbC //= orbA orbC.
+      functional induction (insert a t); first (by rewrite mem_bnode1);
+      by rewrite in_bnode IHb orbT //.
     Qed.
 
     Lemma search_insert a t:
       bst t -> search a (insert a t).
     Proof.
-      move=> Hbst; rewrite -bst_search; first exact: in_insert.
-      by apply bst_bst_insert.
+      by move=> Hbst; rewrite -bst_search; [apply: in_insert | apply: bst_bst_insert].
     Qed.
     
 
@@ -290,6 +278,8 @@ Section BinarySearchTree.
                 then (delete_l a tl) -< x >- tr
                 else tl -< x >- (delete_l a tr)
       else #.
+    Functional Scheme delete_l_ind := Induction for delete_l Sort Prop.
+
 
     Lemma bst_lend_remove a t:
       bst t -> bst (lend_remove a t).2.
@@ -323,11 +313,11 @@ Section BinarySearchTree.
       bst t -> bst (rem_root_r t).
     Proof.
       elim: t => [//=|/= x tl IHl tr IHr].
-      rewrite -!andbA => /and4P [Hbl Hal Hbr Har].
       remember (rend_remove tl x).
       case: p Heqp => t node Heq /=.
-      rewrite -!andbA; apply/and4P; split; try done.
-      - by move: (bst_rend_remove x Hbl); rewrite -Heq.
+      rewrite -!andbA => /and4P [Hbl Hal -> Har] /=.
+      move: (bst_rend_remove x Hbl); rewrite -Heq/= => -> /=.
+      apply/andP; split.
       - apply/allP => y Hin.
         move: (rend_remove_rend tl x); rewrite -Heq => /= ->.
         move: (bst_rend Hal Hbl) => /allP; apply.
@@ -344,22 +334,15 @@ Section BinarySearchTree.
     Lemma all_delete_l p a t:
        all p t -> all p (delete_l a t).
     Proof.
-      elim: t => [//=|/= x tl IHl tr IHr].
-      case: (a =P x) => [<-{x}|Hneq];
-        rewrite -!andbA => /and3P [Hp Hal Har].
-      - remember (rend_remove tl a).
-        case: p0 Heqp0 => t x Heq /=.
-        rewrite -!andbA; apply/and3P; split; try done.
-        + move: (rend_remove_rend tl a) (mem_rend tl a);
-          rewrite -Heq /= => <- /orP [/eqP->//|Hin].
-          by move: Hal => /allP; apply.
-        + apply/allP => y Hin.
-          move: Hal => /allP; apply.
-          by move: (@mem_rend_remove _ y tl a); rewrite -Heq; apply.
-      - case: (ord! a x) => /=; rewrite -!andbA;
-          apply/and3P; split; try done.
-        + by apply IHl.
-        + by apply IHr.
+      functional induction (delete_l a t) => //=; rewrite -!andbA.
+      - remember (rend_remove tl x) as tn.
+        case: tn Heqtn => t node Heq /= /and3P [Hp /allP Hal ->]; rewrite andbT.
+        + apply/andP; split.
+          * by move: (rend_remove_rend tl x) (mem_rend tl x);
+            rewrite -Heq/= => <- /orP [/eqP->//|Hin]; apply Hal.
+          * by apply/allP=> y Hin; apply Hal; apply mem_rend_remove with x; rewrite -Heq.
+      - by move=> /and3P [-> /IHb-> ->].
+      - by move=> /and3P [-> -> /IHb->].
     Qed.
       
     Lemma bst_delete_l a t:

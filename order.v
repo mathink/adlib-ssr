@@ -18,11 +18,14 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Structure totalOrder (T: Type) :=
-  { total_ord:> rel T;
+  Build_totalOrder
+    { total_ord:> rel T;
 
-    ord_antisymmetric: antisymmetric total_ord;
-    ord_transitive: transitive total_ord;
-    ord_total: total total_ord }.
+      ord_antisymmetric: antisymmetric total_ord;
+      ord_transitive: transitive total_ord;
+      ord_total: total total_ord }.
+
+Notation makeTotalOrder ord := (@Build_totalOrder _ ord _ _ _).
 
 Lemma ord_reflexive T (ord: totalOrder T): reflexive ord.
 Proof.
