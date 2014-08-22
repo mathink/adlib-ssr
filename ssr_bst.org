@@ -1,0 +1,646 @@
+#+TITLE: 二分探索木を Coq with SSReflect で弄くる
+#+AUTHOR: mathink
+#+EMAIL: sdk@mathink.net
+#+OPTIONS: toc:2 num:t author:t creator:nil LaTeX:t H:2
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="../css/design.css" />
+
+「需要と供給って言葉の意味、知ってる?」
+
+「突然どうしたんですか。そのくらい知ってますけど」
+
+
+* はじめに
+
+  脚注の多さはジョークですよ、ジョーク。
+
+  ちなみに諸半の事情で脚注へのリンクが付いていない ver. は [[http://qiita.com/mathink/items/e56b138bb02133a179aa][こちらです(Qiita)]] 。
+
+  
+
+** 概要
+
+   拙作 [[https://github.com/mathink/adlib-ssr][adlib-ssr]] 内の二分探索木を扱った [[https://github.com/mathink/adlib-ssr/blob/master/binsearch.v][binsearch.v]] の解説記事です。
+   今回は挿入操作を用いたリストのソーティングを目標に進めていきます。
+
+   削除関数についてはソートと関係がないということと、
+   削除関数自身が色々と興味深い対象だったので後日、近い内に別途記事を書きます。
+
+   それでも長めに見えますが、水増しの結果ですので内容はそれほど厚くありません。御安心ください。
+
+   定理証明っぽいお話しはあまり多くありませんが、
+   基本的に「どのような定義にするか」や「どのような補題を設定するか」といった議論こそが
+   重要であり且つ大半の時間が割かれる部分ですので、これは必然です。
+  
+   必然です。
+
+   動作確認用コードは [[https://gist.github.com/ea493f93ab8116d3fcff][こちら]] にあります。
+   SSReflect-1.5 と MathComp-1.5 を導入済みの環境であれば、 [[https://github.com/mathink/adlib-ssr][adlib-ssr]] を =make && make install= しておけば動くはずです。
+
+** 前提とするもの
+
+   - Coq (with SSReflect) への興味
+   - 忍耐
+
+** 流れ
+
+  - 二分木 :: 基本となるデータ構造から始めましょう
+  - 二分探索木 :: 判定関数を定義します
+  - 探索関数 :: 二分探索木であることを利用しての所属性判定です
+  - 挿入関数 :: 二分探索木に関する基本操作であり、構成のための道具でもあります
+  - リストのソーティング :: 挿入操作と二分探索木という性質を利用したソーティングです
+
+* 二分木
+
+  二分探索木はある性質を持った二分木なので、まずは二分木を定義しましょう。
+  SSReflect を利用していますので、等価性判定や所属性判定を行なう決定手続きも用意しておきます。
+
+** 構造の定義
+
+   *データをどこに持たせるか* には色々と選択肢があると思います。
+   今回は各節にデータを持たせ、葉にはデータを持たせないこととしましょう。
+
+#+BEGIN_SRC v
+Inductive btree (T: Type) :=
+| bleaf
+| bnode (x: T)(tl tr: btree T).
+
+Arguments bleaf {T}.
+Arguments bnode {T}(x tl tr).
+
+Notation "#" := bleaf.
+Notation "tl -< x >- tr" := (bnode x tl tr) (at level 65, no associativity).
+#+END_SRC
+
+  以前、 [[http://www.mathink.net/program/ssr_tree.html][一般的な木構造の定義を相互再帰的に行ったことがあります]] が、子の数が固定されている場合、通常の再帰的定義で事足りますね。
+
+  悩みどころがあるとすれば、どんな記法を与えようかなーとかそういうところです。
+  今回採用した記法は、
+
+#+BEGIN_SRC v
+((#-< 1 >-#)-< 2 >-(#-< 3 >-#))-< 4 >-((#-< 5 >-#)-< 6 >-#)
+#+END_SRC
+
+  と書いて
+
+#+BEGIN_SRC
+     4
+   /   \
+  2     6
+ / \   /
+1   3 5
+#+END_SRC
+
+  という木を表す感じの記法です。
+  他にも試したりしているので、良さそうなものがあれば教えて下さると喜びます。
+  
+** データ型、或いはコンテナ
+
+   SSReflect は決定手続きが大好きです。
+   等価性の判定に於いてもご多分に漏れず、決定可能な等価性判定を伴うデータ型を =eqType= という括りで扱っています。
+   
+   型 =btree T= に対して =T= が =eqType= である、即ち =T= 型の値の等価性判定が決定可能であるなら、
+   =btree T= 型の値に対しても同様のことが言えるでしょう。つまり =btree T= も =eqType= となります。
+
+   =eqType= である型 =T= については =x y: T= という二要素に対して、
+
+#+BEGIN_SRC v
+x == y
+#+END_SRC
+
+   という共通の記法で等価性判定を行うことが出来ます。
+   上記の事実を利用し、 =btree T= 型の値についても ==== で等価性判定が行えるようにしておきましょう。
+
+   その為には =btree T= が =eqType= のインスタンスであることを示していくのですが、そのやり方はここでは割愛します。
+   [[http://www.mathink.net/program/ssr_tree.html][木について色々やった]] ときにはそこそこ説明しているので、興味のある方はそちらを読んでいただくか、
+   あるいは [[https://www.google.co.jp/webhp?sourceid=chrome-instant&ion=1&espv=2&ie=UTF-8#q=ssreflect%20eqtype][Google 先生に ``ssreflect eqtype'' とお尋ね]] ください。
+
+   
+   また、二分木は各節に =T= 型の要素を持っているのでコンテナと見做すことも出来ます。
+   すると、ある値が二分木に含まれているかどうかについて尋ねる、という操作が発生します。
+
+   この二分木は再帰的に定義されているため、その大きさは有限です。ゆえに =T= が =eqType= であれば所属性判定も決定可能となります。
+   所属性判定が決定可能なものについては値 =a= がコンテナ =x= に含まれるかどうかを 
+
+#+BEGIN_SRC v
+a \in x
+#+END_SRC
+
+   という共通の記法で判定することが出来ます。
+   
+   等価性判定の時と同様、 =btree= についてもこの記法が使えるようにしておきますが、やはり詳細は割愛しますので読むか尋ねるかよしなに。
+
+* 二分探索木
+
+  以降、二分木の持つデータの型を =T= とし、 =T= 上には全順序 =<== が存在すると仮定します。
+  ついでに =T= は =eqType= であり、この全順序については =x<=y= が成り立つか否かの判定を関数 =ord= で決定できるとしておきましょう。
+  
+#+BEGIN_SRC v
+reflect (x <= y) (ord x y)
+#+END_SRC
+
+  が成り立っているということです[fn:order]。
+
+  本節では二分木 =t= が二分探索木であることを表明するための述語 =bst= を構成していきます。
+
+** 「二分探索木である」ということ
+
+  二分探索木は、全ての節に対して、その節のデータ、左部分木、右部分木をそれぞれ =x=, =tl=, =tr= としたときに
+
+#+BEGIN_SRC v
+「tl 中のデータ」 <= x <= 「tr 中のデータ」
+#+END_SRC
+
+  という関係が成り立っているような二分木のことです。
+
+  SSReflect は決定手続きが大好きですから、二分木 =t: btree T= に対してそれが二分探索木か否かを判定する決定手続き =bst= を定義します。
+
+#+BEGIN_SRC v
+Fixpoint bst t: bool :=
+  if t is tl -< x >- tr
+  then (bst tl) && (all (flip ord x) tl) && (bst tr) && (all (ord x) tr)
+  else true.
+#+END_SRC
+
+  このように関数 =bst= の定義は単純です。
+
+  また、 =all p t= は文字通り =t= 中のすべてのデータ =x= が =p x = true= となるか否かを判定するものです。
+  [[http://ssr.msr-inria.inria.fr/doc/ssreflect-1.5/Ssreflect.seq.html#all][リストに対して定義されている =all=]] とその気持ちは全く同じです[fn:all_name]。
+
+  先程二分木の例として取りあげた
+
+#+BEGIN_SRC v
+((#-< 1 >-#)-< 2 >-(#-< 3 >-#))-< 4 >-((#-< 5 >-#)-< 6 >-#)
+#+END_SRC
+
+  は二分探索木でもあるので、
+
+#+BEGIN_SRC v
+Eval compute in (bst leq (((#-< 1 >-#)-< 2 >-(#-< 3 >-#))-< 4 >-((#-< 5 >-#)-< 6 >-#)))
+     (* = true *)
+     (* : bool *)
+#+END_SRC
+
+  となります[fn:eval_compute]。
+
+  二分探索木か否かの判定関数 =bst= が得られたため、二分木 =t: btree T= が二分探索木であるという言明を =bst t= と表現できるようになりました[fn:is_true]。
+
+** 帰納的述語とリフレクション
+
+   判定関数によって「二分探索木であること」を意味する命題の記述が出来るようになりました。
+   この時、関数 =bst= は述語のように振る舞っています。
+
+   しかし =bst= とは別に、本来の意味での述語を定めておくことも有用です。
+   「二分探索木であること」を意味する述語を再帰的に構成できれば、証明時にはその述語の構造に基づく帰納法が使えるようになります。
+
+   ということで再帰的述語 =isBst= を定義しました。
+
+#+BEGIN_SRC v
+Inductive isBst: btree T -> Prop :=
+| isBst_bleaf: isBst #
+| isBst_bnode: forall x tl tr,
+                 isBst tl -> btR (flip le) x tl ->
+                 isBst tr -> btR le x tr ->
+                 isBst (tl -< x >- tr).
+#+END_SRC
+
+   記事中で定義していない =btR= なるものがありますが、大体雰囲気からその意味を汲み取れると思いますのでよろしくお願いします[fn:smell]。
+   今回、二分探索木の定義がわかりやすく単純なため、 =isBst= の中身と =bst= の中身にはあまり差はありません。
+   ここでさらに定理として
+
+#+BEGIN_SRC v
+forall t, reflect (isBst t) (bst t)
+#+END_SRC
+
+   を示しておくことで、実際にこの二つが等価であることを述べることが出来ます。
+   
+   本記事では証明の詳細には触れませんので =isBst= の登場はこの節に限られますが、
+   何にせよ決定手続きを定義してそれを述語らしく扱うような場面ではリフレクションの利用は大いに証明の助けになります[fn:reflection]。
+
+[fn:order] さらっと書きましたが、全順序をさらりと扱うためにわざわざ別モジュール書いたりしています。
+[fn:all_name] 敢えて名前を被せてあります。 =btree_all= とか =btall= みたいな名前をつけるより、 =seq.all= と =btree.all= で使い分け、時には prefix を省略しても OK という使い方のほうがわかりやすいかなーと判断したためです。
+[fn:eval_compute] 冒頭でも触れていますが、このように =Eval compute in= してるコードは全て [[https://gist.github.com/mathink/ea493f93ab8116d3fcff][ここ]] にあります。
+[fn:is_true] SSReflect 利用下では述語 =is_true= による coercion に基いて，等式 =b = true= は(適切な場では)単に =b= と書くだけで表現できます。
+[fn:smell] 定理証明器に喧嘩を売っているわけではありません。
+[fn:reflection] 助けになるのは事実ですが、時系列的には =isBst= の定義は大半の証明を終えた後だったので、今回 =isBst= は特に役立ってません。
+
+* 探索関数
+
+  二分探索木であることの記述が出来るようになったので、
+  ここからは二分探索木に対する操作を考えていきます。
+
+  まずは要素 =a: T= が =t: btree T= に含まれているかどうかを調べる =search a t= を定義します。
+  二分探索木であるという性質を利用することで先述した所属性判定と比べ、計算量を抑えることが出来ます[fn:complexity]。
+   
+#+BEGIN_SRC Coq
+Fixpoint search a t: bool :=
+  if t is tl -< x >- tr
+  then if a == x then true
+       else if ord! a x then search a tl else search a tr
+  else false.
+#+END_SRC
+
+   =ord!= は全順序 =ord= に対する狭義全順序、つまり =ord! a x = (ord a x) && (a!=x)= です[fn:strict_ord]。
+
+   関数そのものは任意の二分木に適用できますが、
+   意図する結果が得られるのは二分探索木に適用した場合に限られます。
+
+** =\in= と =search=
+
+    比較のために =a \in t= の実態である =mem_btree t a= の定義を載せておきます。
+
+#+BEGIN_SRC v
+Fixpoint mem_btree (t: btree T): pred T :=
+  if t is tl -< x >- tr
+  then xpredU1 x (xpredU (mem_btree tl) (mem_btree tr))
+  else xpred0.
+#+END_SRC
+
+    SSReflect に慣れていないと読みづらいですが、 =mem_btree t= で =T= 上の述語が定義されています。
+    =xpredU= とかについては、雰囲気から意味を汲み取(るかあるいは [[http://ssr.msr-inria.inria.fr/doc/ssreflect-1.5/Ssreflect.ssrbool.html][ここ]] で =C-f=)ってください。
+
+    =t= が二分探索木であれば =a \in t= と =search a t= は同じ結果を返します。
+
+#+BEGIN_SRC v
+Lemma bst_search a t:
+  bst t -> (a \in t) = (search a t).
+#+END_SRC
+
+    この補題の証明は盛っても 10 行程度ですが、
+    強いて言えば =search a t = false= と =a \in t = false= が等価であることを示すのがちょっとややこしいかもしれません。
+
+    =search= のみに関わる補題はこれくらいなので、次に移りましょう。
+
+
+[fn:complexity] ということで計算量の比較までをやりたかったのですが、舞台設定に手間がかかるので、今はまだお預け状態です。
+[fn:strict_ord] この定義だと等価性判定が 2 回行われ少々無駄がありますが、「意味」の方を意識してこのようにしています。証明を書き換える気になったら =ord!= が =ord= になるかもしれません(やる気 driven)。
+
+* 挿入関数
+
+   要素 =a: T= を二分木 =t= に挿入して新たな二分木を獲る関数 =insert= を定義します。
+   受け取った二分木を変形していくので、注目すべき点がいくつか出てきます。
+
+** 左か右か、あるいは。
+
+    値 =a= を二分探索木 =t= に追加するとき、 =a= と等しい値が既に =t= 中にある場合の選択肢は主に以下の 3 つになるでしょう。
+    
+    1. 挿入をしない
+    2. 左部分木に挿入
+    3. 右部分木に挿入
+
+    1 はデータの重複を無視する場合に取る選択肢です。ここでは重複も許してデータを格納していくため、 2 か 3 に絞られます。
+
+    二分木は対称的な構造をしているので、時々、左を選ぶか右を選ぶかに任意性が生じます。
+    基本的には他の操作との対応などを踏まえてどちらかを決めていくことになります。
+    
+    少し後の話ですが、二分探索木を利用してソートを行います。
+    その時に安定ソートとなるよう、右部分木へ挿入することにします[fn:insert_flatten]。
+
+#+BEGIN_SRC v
+Fixpoint insert a t: btree T :=
+  if t is tl -< x >- tr
+  then if ord! a x
+       then (insert a tl) -< x >- tr
+       else tl -< x >- (insert a tr)
+  else #-< a >-#.
+#+END_SRC
+
+    上で述べた通りの定義になっているはずです。
+
+    具体例はこちら。
+
+#+BEGIN_SRC v
+Eval compute in (insert leq 4 (((#-< 1 >-#)-< 2 >-(#-< 3 >-#))-< 4 >-((#-< 5 >-#)-< 6 >-#))).
+     (* = ((# -< 1 >- #) -< 2 >- (# -< 3 >- #)) -< 4 >- *)
+     (*   (((# -< 4 >- #) -< 5 >- #) -< 6 >- #) *)
+     (* : btree nat_eqType *)
+
+Eval compute in (insert leq 8 (((#-< 1 >-#)-< 2 >-(#-< 3 >-#))-< 4 >-((#-< 5 >-#)-< 6 >-#))).
+     (* = ((# -< 1 >- #) -< 2 >- (# -< 3 >- #)) -< 4 >- *)
+     (*   ((# -< 5 >- #) -< 6 >- (# -< 8 >- #)) *)
+     (* : btree nat_eqType *)
+#+END_SRC
+
+    入ってますか。入ってますね。
+
+** 性質の保存
+
+   二分探索木への要素の追加は *「二分探索木である」という性質が壊れないように* 行われます[fn:insert]。
+   =insert a t= は =t= に =a= を追加した二分木ですので、示すべき命題は以下のようになります。
+
+#+BEGIN_SRC v
+Lemma bst_bst_insert a t:
+  bst t -> bst (insert a t).
+#+END_SRC 
+
+   この命題を示すにあたって次の補題を用いています。
+
+#+BEGIN_SRC v
+Lemma mem_insert a b t:
+  b \in (insert a t) = (b == a) || (b \in t).
+#+END_SRC
+
+   これも挿入操作の仕様の一つですね。
+
+   関連するものとして =bst_bst_insert= とは逆の命題である
+#+BEGIN_SRC v
+Lemma bst_insert_bst a t:
+  bst (insert a t) -> bst t.
+#+END_SRC 
+   や、これらをより強めた
+#+BEGIN_SRC v
+Lemma bst_insert a t:
+  bst t = bst (insert a t).
+#+END_SRC 
+   という補題もなり足ります。
+   これらは全て案外簡単な命題ですので、試しに証明してみると良いかもしれません[fn:prove]。
+   
+   基本的には二分木の構造に関する帰納法で十分ですが、例えば =insert= についての functional induction も有効です[fn:funind]。
+
+** 探索と挿入
+   
+    =insert= は「二分探索木である」という性質を保ちます。
+    そして =search= は二分探索木であれば正しく結果を返すのでした。
+
+    ということで以下の補題が成り立ちます。
+
+#+BEGIN_SRC v
+Lemma search_insert a t:
+  bst t -> search a (insert a t).
+#+END_SRC
+
+    証明に必要な材料は揃っているので、簡単です。
+    簡単なので証明スクリプトそのものを載せておきます。
+
+#+BEGIN_SRC v
+Proof.
+  by move=> Hbst; rewrite -bst_search; [apply: in_insert | apply: bst_bst_insert].
+Qed.
+#+END_SRC
+
+    一行ですね。補題 =in_insert= は以下の通りです。
+
+#+BEGIN_SRC v
+Lemma in_insert a t:
+  a \in insert a t.
+#+END_SRC
+
+    成り立ってなかったら困りますね。
+
+[fn:insert_flatten] 細かいことを言えば、二分木の平坦化関数が行き掛け順に木を走査していくという前提の下での話です。帰りがけ順に平坦化していく場合には、左部分木へ挿入することになりますが、この時はソート関数の結果が逆順になっています。
+[fn:insert] 更に言うと *二分探索木ではない* という性質も保存しています。
+[fn:prove] そもそも binsearch.v 内の命題は大抵難しくないので、いっそ全部に挑戦してみましょう。
+[fn:funind] 関数 =insert= に基く帰納原理は、例えば =Functional Scheme= コマンドを使って作ります。作っておくと幾つかの証明が少し楽になります。別に使わずとも証明はできますし難しさも大差ありませんが、 =insert_ind= を用いた時、場合分けの手間がちょっと省けます。省けるんですが、 SSReflect で functionl induction を上手く扱う方法を私は知りません。
+仮定の名前とかが勝手に付けられてしまってちょっと悲しい。
+
+* リストのソーティング
+
+  二分探索木への挿入関数 =insert= を定義しました。
+  「二分探索木である」という性質と =insert= を利用することで、リストのソートを行うことが出来ます。
+
+** ソート関数: =btsort=
+
+   ソーティングの具体的な手順は
+
+   1. 与えられたリストの要素を全て二分探索木に挿入
+   2. その二分木を平坦化してソート済みのリストを得る
+
+   という二つのフェーズに分かれています。ソート関数もこの形に倣うように定義されます。
+
+#+BEGIN_SRC v
+Fixpoint btsort_insert s t: btree T :=
+  if s is h :: s' then btsort_insert s' (insert h t) else t.
+
+Definition btsort s := flatten (btsort_insert s #).
+#+END_SRC
+
+  =btsort_insert s t= は、リスト =s= の要素を *先頭から順に* 二分木 =t= へ挿入する関数です。
+  
+  =btsort s= は葉を初期値として =btsort_insert= を実行し、得られた二分木に平坦化関数 =flatten= を適用しています。
+
+  =flatten= は二分木を行き掛け順に走査しながら平坦化する関数です。
+
+#+BEGIN_SRC v
+Fixpoint flatten t : seq T :=
+  if t is tl -< x >- tr
+  then flatten tl ++ [:: x & flatten tr ]
+  else [::].
+#+END_SRC
+
+  いつもの例で試してみましょう。
+
+#+BEGIN_SRC v
+Eval compute in (flatten (((#-< 1 >-#)-< 2 >-(#-< 3 >-#))-< 4 >-((#-< 5 >-#)-< 6 >-#))).
+     (* = [:: 1; 2; 3; 4; 5; 6] *)
+     (* : seq nat *)
+#+END_SRC
+
+  何やらソート済みのリストが得られていますね。二分探索木を与えたからです。
+  二分探索木を =flatten= すると、得られたリストはソート済みです。
+
+  =btsort= はこの性質を利用してソートを行なう関数です。
+
+** ソートの正当性
+
+   より正確には *二分探索木を =flatten= したものはソート済みである* という性質により、
+   *関数 =btsort= がリストのソートを確かに行なっていることが導ける* ということです。
+
+   ソート関数 *のつもり* で =btsort= を定義しましたが、それが正しいのかは証明しないとわかりません。
+   以下の二つの定理を証明して初めて「 =btsort= はリストをソートする関数である」と言えるわけです。
+
+#+BEGIN_SRC v
+Lemma btsort_sorted s:
+  sorted ord (btsort s).
+
+Lemma btsort_perm_eq s:
+  perm_eq s (btsort s).
+#+END_SRC
+   
+   =sorted= は [[http://ssr.msr-inria.inria.fr/doc/mathcomp-1.5/MathComp.path.html][MathComp.path]] で定義されている述語です[fn:sorted]。
+   =perm_eq= は [[http://ssr.msr-inria.inria.fr/doc/ssreflect-1.5/Ssreflect.seq.html][Ssreflect.seq]] で定義されており、その名の通り二つのリストが互いに並び替えた物同士であることを表しています。
+
+   これらに対応するような帰納的述語は Coq の標準ライブラリでも定義されています。
+
+   さて、せっかくですのでこれら二つの補題のうち、 =btsort_sorted= については証明の方針についても詳しく見ていくことにしましょう。
+   
+
+** 「 =btsort= はソート済みのリストを返す関数である」
+    
+#+BEGIN_SRC v
+Lemma btsort_sorted s:
+  sorted ord (btsort s).
+Proof.
+#+END_SRC
+
+    例えばここまでスクリプトを評価したとしましょう。
+    証明開始直後のゴールは次のようになっています。
+
+#+BEGIN_SRC v
+1 subgoals, subgoal 1 (ID 4448)
+  
+  T : eqType
+  le : T -> T -> Prop
+  ord : totalOrder T
+  ordP : forall x y : T, reflect (x <= y) (ord x y)
+  s : seq T
+  ============================
+   sorted ord (btsort s)
+
+
+(dependent evars:)
+#+END_SRC
+    =btsort= は再帰関数 =btsort_insert= の特殊な場合ですので、
+#+BEGIN_SRC v
+rewrite /btsort.
+#+END_SRC
+    として定義を解きましょう。するとゴールは
+#+BEGIN_SRC v
+1 subgoals, subgoal 1 (ID 4449)
+  
+  T : eqType
+  le : T -> T -> Prop
+  ord : totalOrder T
+  ordP : forall x y : T, reflect (x <= y) (ord x y)
+  s : seq T
+  ============================
+   sorted ord (flatten (btsort_insert s #))
+
+
+(dependent evars:)
+#+END_SRC
+    となります。
+
+    ここで =sorted= の引数が二分木を =flatten= したものであることに注目しましょう。
+
+    先ほど *二分探索木を =flatten= したものはソート済みである* という性質に触れました。
+    これまでに定義してきたものでこの言明を書き直して =bst_sorted= という名前を付けることにしましょう。
+#+BEGIN_SRC v
+Lemma bst_sorted t:
+  bst t -> sorted ord (flatten t)
+#+END_SRC
+    となります。この補題が成り立つとすれば、ゴールに対して次に何をすべきかが見えてきます。
+#+BEGIN_SRC v
+apply bst_sorted.
+#+END_SRC
+    として
+#+BEGIN_SRC v
+1 subgoals, subgoal 1 (ID 4452)
+  
+  T : eqType
+  le : T -> T -> Prop
+  ord : totalOrder T
+  ordP : forall x y : T, reflect (x <= y) (ord x y)
+  s : seq T
+  ============================
+   bst (btsort_insert s #)
+
+
+(dependent evars:)
+#+END_SRC
+    というゴールを得ます。
+
+    =btsort_insert= は二分木に対してリストの要素を =insert= で挿入していく関数でしたので、
+    初期値となる二分木が二分探索木であれば =btsort_insert= の結果も二分探索木となるはずです。
+    つまり
+#+BEGIN_SRC v
+Lemma btsort_insert_bst s t:
+  bst t -> bst (btsort_insert s t).
+#+END_SRC
+    という補題が成り立つということです。
+    証明は =t= の構造に関する帰納法ですぐに終わります。
+
+    この補題を
+#+BEGIN_SRC v
+apply btsort_insert_bst.
+#+END_SRC
+    と今のゴールに適用すれば、次のゴールは
+#+BEGIN_SRC v
+1 subgoals, subgoal 1 (ID 4453)
+  
+  T : eqType
+  le : T -> T -> Prop
+  ord : totalOrder T
+  ordP : forall x y : T, reflect (x <= y) (ord x y)
+  s : seq T
+  ============================
+   bst #
+
+
+(dependent evars:)
+#+END_SRC
+    です。これはもう自明ですね。葉のみからなる二分木は二分探索木です。
+
+    結局、まとめると証明は
+#+BEGIN_SRC v
+by rewrite /btsort; apply bst_sorted; apply btsort_insert_bst.
+#+END_SRC
+    というたった一行に収めることが出来てしまいました。なんともあっさり。
+
+    一つだけ注意すべきことがあるとすれば、実は =bst_sorted= の証明は少し厄介で、
+    =sorted= に関する補題が幾つか必要になります。
+    その証明には =ord= が全順序であることを存分に活用するので、それなりに手間がかかります。
+
+    ともあれ関数 =btsort= が *二分探索木であるという性質を利用してリストをソート* していることが示され、
+    晴れて =btsort= はリストをソートする関数であると堂々と言えることになりました(=btsort_perm_eq= についてはよしなに[fn:btsort_perm])。
+
+
+[fn:flatten_walk] アキュムレータを引数に持つ関数 =walk: seq T -> btree T -> seq T= を用いて =flatten= を定義することも出来ますが、簡単のため、ここでは直接 =flatten= を定義しています。
+[fn:sorted] この述語はリストの隣り合う要素同士で順序が成立していることを意味しているのですが、この定義では「ソート済みのリスト」に対して通常考えるような性質が成り立たない場合があります。原因は *隣り合う要素同士で順序が成立していること* のみしか考えていないことにあるのですが、詳しい話については [[https://twitter.com/ksknac][@ksknac]] さんによる [[http://d.hatena.ne.jp/KeisukeNakano/20131225][推移律はいらない? ─比較ソートの正当性に必要な比較関数の性質─]] を読むと良いと思います。
+[fn:btsort_perm] 定理 =btsort_perm_eq= の証明には二分探索木がほとんど関わらなかったので触れませんでした。二分木に関する基本的な道具たちが活躍したので、それはそれでひけらかしたい気持ちもあるのですが、自重というやつです。
+
+* おわりに
+
+  締まらなくても締めますよ。
+
+** 無駄に長くありませんか?
+
+  ひたすらだらりと続けてきておいて肝心の定理の証明は一行で終わるという形になりました。
+
+  これで済むならここまで長々と書いてきたのは冗長だったのでは? と思う方もいるかもしれませんが、
+  (私の文章力の問題がないとは言わないまでも)そうやって細かく積み重ねてきたからこそ、
+  目的としていた補題の証明があっさり終わったわけです。
+  
+  形式的証明に限らず、往々にして最終的に示したい定理の証明は別の補題の特殊化で終わったり、作り上げてきた補題を順に適用ていくだけで事が済んだりします。
+  もちろん、そうなるように問題を分割できたからこそですが、
+  定理証明系で形式化をしていくならば、この方針はより役に立つだろうと思います。
+  
+  informal に証明を書いていると、いつの間にか暗黙の仮定が生じているということがままあります。
+  そういったものを詳らかにしていかなければ formal な証明は成し得ないわけですが、
+  いきなり大型定理の証明にとりかかってしまうと、
+  証明が上手く行かなかった場合に、どこで失敗したのか、何が足りないのかなどといった情報を得るのが難しくなります。
+    
+  定理証明系で作業をしている場合、細かな部品から順に作り上げていくことになるので、
+  関連しそうな補題は思いついた時に証明しておく、というのも悪くないでしょう。
+  そこで詰まってしまったら本末転倒ですが、どんなものにどんな性質が成り立つのか、という情報を頭の中に入れておけば、
+  硬そうな定理もほぐすのが楽になるはずです。
+
+  多分。
+  
+** みんなで使おう SSReflect
+
+   そして、あまり大っぴらには扱っていませんが、全編通して SSReflect を使っています。
+   使っていますも何も Additional Library for SSReflect とかいう名前で作業しているからそりゃ当たり前なんですが、
+   とにかく SSReflect を、特に拡張された証明記述言語を存分に活用しています。
+
+   SSReflect は、使えば使うほど新たな機能を知ることになります。
+   そうすることで、どんどん証明を書くのが楽しく、楽になっていきます。
+
+   証明が書きやすいというのはとても大事です。
+   定理証明系を使うとトライ & エラーがひたすらに重なっていきますから、
+   証明を書き進めていくのにストレスが溜まるようだと、もう、アレです。
+   憤怒の表情で =Admitted.= を列挙したりしてしまうわけです。
+
+   いかに楽をして証明をするかというのは非常に大事ではないでしょうか。
+   厳密さの保証は Coq にお任せできるのですから、可能な限り怠惰に証明をしていきたいものです。
+   
+** 締めの言葉
+
+   針小棒大、大いに結構。
+
+   
+
+
+   
+
+
+
+   
