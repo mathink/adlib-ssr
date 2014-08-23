@@ -113,6 +113,15 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">all</span> <span class="id" type="var">p</span> (<span class="id" type="var">revtree</span> <span class="id" type="var">t</span>) = <span class="id" type="var">all</span> <span class="id" type="var">p</span> <span class="id" type="var">t</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <span class="id" type="var">sorted_walk_bst</span> <span class="id" type="var">t</span> <span class="id" type="var">s</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">sorted</span> <span class="id" type="var">ord</span> (<span class="id" type="var">walk</span> <span class="id" type="var">t</span> <span class="id" type="var">s</span>) = (<span class="id" type="var">bst</span> <span class="id" type="var">t</span>) &amp;&amp; (<span class="id" type="var">sorted</span> <span class="id" type="var">ord</span> <span class="id" type="var">s</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&amp;&amp; (<span class="id" type="var">all</span> (<span class="id" type="keyword">fun</span> <span class="id" type="var">x</span> =&gt; <span class="id" type="var">seq.all</span> (<span class="id" type="var">ord</span> <span class="id" type="var">x</span>) <span class="id" type="var">s</span>) <span class="id" type="var">t</span>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <span class="id" type="var">all_predT</span> <span class="id" type="var">t</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">all</span> <span class="id" type="var">predT</span> <span class="id" type="var">t</span>.<br/>
+
+<br/>
 &nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <span class="id" type="var">sorted_bst</span> <span class="id" type="var">t</span>:<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">sorted</span> <span class="id" type="var">ord</span> (<span class="id" type="var">flatten</span> <span class="id" type="var">t</span>) = <span class="id" type="var">bst</span> <span class="id" type="var">t</span>.<br/>
 
@@ -228,6 +237,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">then</span> (<span class="id" type="var">delete_l</span> <span class="id" type="var">a</span> <span class="id" type="var">tl</span>) -&lt; <span class="id" type="var">x</span> &gt;- <span class="id" type="var">tr</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">else</span> <span class="id" type="var">tl</span> -&lt; <span class="id" type="var">x</span> &gt;- (<span class="id" type="var">delete_l</span> <span class="id" type="var">a</span> <span class="id" type="var">tr</span>)<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">else</span> #.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">Function</span><span class="id" type="var">al</span> <span class="id" type="keyword">Scheme</span> <span class="id" type="var">delete_l_ind</span> := <span class="id" type="keyword">Induction</span> <span class="id" type="keyword">for</span> <span class="id" type="var">delete_l</span> <span class="id" type="keyword">Sort</span> <span class="id" type="keyword">Prop</span>.<br/>
 
 <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">Lemma</span> <span class="id" type="var">bst_lend_remove</span> <span class="id" type="var">a</span> <span class="id" type="var">t</span>:<br/>
