@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/19 22:22:34> *)
+(* Time-stamp: <2014/8/23 3:6:41> *)
 (**
  * Binary tree on Coq with SSReflect
  *)
@@ -104,44 +104,48 @@ Section BinaryTree.
     by elim: t => [//= | _ /= tl -> tr -> ]; rewrite maxnC.
   Qed.
 
-  Fixpoint flatten t : seq T :=
+  Fixpoint walk t s: seq T :=
     if t is tl -< x >- tr
-    then flatten tl ++ [:: x & flatten tr ]
-    else [::].
+    then walk tl (x :: walk tr s)
+    else s.
+  Functional Scheme walk_ind := Induction for walk Sort Prop.
+
+  Definition flatten t := walk t [::].
+  Arguments flatten / t.
   
+  Lemma walk_size t s:
+    seq.size (walk t s) = size t + seq.size s.
+  Proof.
+    elim: t s => [//= | x /= tl IHl tr IHr] s.
+    by rewrite IHl /= IHr -addn1 -[(_+_).+1]addn1 [(_+1)+_]addnAC !addnA.
+  Qed.
+
   Lemma flatten_size t:
     seq.size (flatten t) = size t.
   Proof.
-    elim: t => [//= | x /= tl IHl tr IHr].
-    by rewrite seq.size_cat /= addnS IHl IHr.
+    by rewrite walk_size /= addn0.
+  Qed.
+
+  Lemma walk_cat t s1 s2:
+    walk t s1 ++ s2 = walk t (s1 ++ s2).
+  Proof.
+    elim: t s1 s2 => [//= | x /= tl IHl tr IHr] s1 s2.
+    by rewrite IHl /= IHr /=.
+  Qed.
+
+  Lemma walk_rev t s:
+    rev (walk t s) = rev s ++ walk (revtree t) [::].
+  Proof.
+    elim: t s => [//= | x /= tl IHl tr IHr] s.
+    - by rewrite cats0.
+    - by rewrite IHl /= rev_cons cat_rcons IHr -catA walk_cat /=.
   Qed.
 
   Lemma flatten_rev t:
     rev (flatten t) = flatten (revtree t).
   Proof.
-    elim: t => [//= | x /= tl IHl tr IHr].
-    by rewrite rev_cat rev_cons cat_rcons IHl IHr.
+    by rewrite walk_rev /=.
   Qed.
-
-  Fixpoint flatten_m t : seq T :=
-    if t is tl -< x >- tr
-    then [:: x & flatten_m tl ++ flatten_m tr ]
-    else [::].
-  
-  Fixpoint flatten_r t : seq T :=
-    if t is tl -< x >- tr
-    then flatten_r tr ++ [:: x & flatten_r tl ]
-    else [::].
-  
-  Definition flatten_l := flatten.
-
-  Lemma flatten_lr t:
-    rev (flatten_l t) = flatten_r t.
-  Proof.
-    elim: t => [//= | x /= tl IHl tr IHr].
-    by rewrite rev_cat rev_cons cat_rcons IHl IHr.
-  Qed.
-
 
   Section BtreePred.
 
@@ -154,11 +158,17 @@ Section BinaryTree.
            p x + cl + cr
       else 0.
 
+    Lemma walk_count t s:
+      seq.count p (walk t s) = seq.count p s + count t.
+    Proof.
+      elim: t s => [//= | /= x tl IHl tr IHr] s.
+      by rewrite IHl /= IHr /= addnCA -addnA addnAC.
+    Qed.
+    
     Lemma flatten_count t:
       seq.count p (flatten t) = count t.
     Proof.
-      elim: t => [//= | /= x tl IHl tr IHr].
-      by rewrite count_cat /= addnCA IHl IHr addnA.
+      by rewrite walk_count /=.
     Qed.
 
 
@@ -167,11 +177,17 @@ Section BinaryTree.
       then p x || has tl || has tr 
       else false.
 
+    Lemma walk_has t s:
+      seq.has p (walk t s) = seq.has p s || has t.
+    Proof.
+      elim: t s => [//= | /= x tl IHl tr IHr] s; first by rewrite orbF.
+      by rewrite IHl /= IHr /= orbCA -orbA orbAC.
+    Qed.
+
     Lemma flatten_has t:
       seq.has p (flatten t) = has t.
     Proof.
-      elim: t => [//= | /= x tl IHl tr IHr].
-      by rewrite has_cat /= orbCA IHl IHr orbA.
+      by rewrite walk_has /=.
     Qed.
 
     Lemma has_bleaf:
@@ -192,12 +208,17 @@ Section BinaryTree.
       then p x && all tl && all tr
       else true.
 
+    Lemma walk_all t s:
+      seq.all p (walk t s) = seq.all p s && all t.
+    Proof.
+      elim: t s => [//= | /= x tl IHl tr IHr] s; first by rewrite andbT.
+      by rewrite IHl /= IHr /= andbCA -andbA andbAC.
+    Qed.
+
     Lemma flatten_all t:
       seq.all p (flatten t) = all t.
-
     Proof.
-      elim: t => [//= | /= x tl IHl tr IHr].
-      by rewrite all_cat /= andbCA IHl IHr andbA.
+      by rewrite walk_all /=.
     Qed.
 
     Lemma all_bleaf:
@@ -304,6 +325,7 @@ Section BinaryTree.
            | >> p' => traverse p' tr
          end
     else None.
+  Functional Scheme traverse_ind := Induction for traverse Sort Prop.
 
   Lemma traverse_height p t:
     height t < length p -> traverse p t = None.
@@ -327,7 +349,7 @@ Section EqBtree.
 
   Variable (T: eqType).
 
-  Implicit Type t: btree T.
+  Implicit Types (t: btree T)(s: seq T).
 
   (* Define decision procedure for equality of btree *)
   Fixpoint eqbtree t1 t2 :=
@@ -573,19 +595,45 @@ Section EqBtree.
     by rewrite -has_pred1 has_count -eqn0Ngt; apply eqP.
   Qed.
 
+  
+  Lemma mem_walk a t s:
+    (a \in walk t s) = (a \in t) || (a \in s).
+  Proof.
+    elim/walk_ind: t s / (walk t s) => t s //=.
+    move=> {t} x tl tr _ Heqr Heql.
+    by rewrite in_bnode /= Heql /= in_cons Heqr orbCA -!orbA.
+  Qed.
 
   Lemma mem_flatten a t:
-    (a \in t) = (a \in flatten t).
+    (a \in flatten t) = (a \in t).
   Proof.
-    elim: t => [//= | /= x tl IHl tr IHr].
-      by rewrite mem_cat in_cons in_bnode IHl IHr orbCA orbA.
+    by rewrite mem_walk /= in_nil orbF.
+  Qed.
+
+  Lemma size_neq s1 s2:
+    seq.size s1 != seq.size s2 -> s1 != s2.
+  Proof.
+    elim: s1 s2 => [| h1 s1 IHs] /= [| h2 s2] //=.
+    move=> /eqP Hneq; rewrite eqseq_cons negb_and;
+           apply/orP; right; rewrite IHs //=.
+    by apply/eqP=>Heq; apply Hneq; rewrite Heq.
+  Qed.
+
+  Lemma bleaf_walk t s:
+    (walk t s == s) = (t == #). 
+  Proof.
+    elim/walk_ind: t s / (walk t s) => t s //=; first by rewrite ?eq_refl.
+    move=> x tl tr _. 
+    have Hneq: (seq.size (walk tl (x::walk tr s)) != seq.size s)
+      by rewrite walk_size /= walk_size -addn1 addnAC !addnA
+         -{2}[seq.size s]add0n eqn_add2r addn1 -lt0n ltn0Sn.
+    by move: (size_neq Hneq); rewrite -eqbF_neg => /eqP -> //=.
   Qed.
 
   Lemma bleaf_flatten_nil t:
-    (t == #) = (flatten t == [::]).
+    (flatten t == [::]) = (t == #).
   Proof.
-    case: t => //= x tl tr.
-    case: (flatten tl) => //=.
+    by rewrite bleaf_walk.
   Qed.
 
   (* Uniqueness *)
@@ -596,12 +644,13 @@ Section EqBtree.
            && (all (negb \o mem tr) tl)
            && (all (negb \o mem tl) tr)
     else true.
+  Functional Scheme uniq_ind := Induction for uniq Sort Prop.
 
   Lemma count_uniq_mem t a:
     uniq t -> count_mem a t = (a \in t).
   Proof.
-    elim: t => [//= | /= x tl IHl tr IHr].
-    rewrite -4!andbA.
+    elim/uniq_ind: t / (uniq t) => t //=.
+    move=> x tl tr _ IHl IHr; rewrite -4!andbA.
     move=> /and3P [/negbTE Hninl /IHl->{IHl}
                    /and4P [/negbTE Hninr /IHr->{IHr} Hrl Hlr]].
     rewrite in_bnode [x == a]eq_sym; case: eqP => [-> | Hneq] /=;
@@ -658,16 +707,17 @@ Section EqBtree.
       move: (IHr x) => /orP [/eqP-> | Hin]; by [left | right].
   Qed.
 
-  (* temp *)
-  Implicit Type (s: seq T).
-
+  
+  
+  (* Temp *)
   Notation rhead s a := (last a s).
   
   Fixpoint rbehead s: seq T :=
-    if s is x :: s'
-    then if s' is [::] then [::]
-         else x :: rbehead s'
-    else [::].
+    match s with
+      | [::] | [:: _] => [::]
+      | x :: s' => x :: rbehead s'
+    end.
+  Functional Scheme rbehead_ind := Induction for rbehead Sort Prop.
 
   Lemma rbehead_cons x y s:
     rbehead (x :: y :: s) = x :: (rbehead (y :: s)).
@@ -685,17 +735,20 @@ Section EqBtree.
       elim: s1 {IHs} h1 => //= h1' s1 IH1 h1. 
   Qed.
 
+  Lemma rbehead_rcons s x:
+    rbehead (rcons s x) = s.
+  Proof.
+    by rewrite -cats1 rbehead_cat_cons /= cats0.
+  Qed.
+
   Lemma mem_rbehead a s:
     a \in (rbehead s) -> a \in s.
   Proof.
-    elim: s a => [//=| h s IHs] a /=.
-    move: IHs; remember (rbehead s).
-    move: Heql; case: s => // h' s Heq IH.
-    rewrite in_cons => /orP [/eqP-> | Hin].
-    - by rewrite in_cons; apply/orP; left.
-    - by rewrite in_cons; apply/orP; right; apply IH.
+    elim/rbehead_ind: s /(rbehead s) => s0 //= x s _ {s0} h t -> IH.
+    rewrite in_cons=>/orP [/eqP->|Hin];
+      first by rewrite in_cons; apply/orP; left.
+    by apply/orP; right; apply: IH Hin.
   Qed.      
-
 
   Lemma head_cat_cons a x s1 s2:
     head a (s1 ++ x :: s2) = head a (rcons s1 x).
@@ -703,18 +756,30 @@ Section EqBtree.
     move: s1 => [|] //=.
   Qed.
   
-  Lemma lend_flatten_head a t:
-    lend a t = head a (flatten t).
+  Lemma head_walk_lend_head a t s:
+    head a (walk t s) = lend (head a s) t.
   Proof.
-    elim: t a => [//=|/= x tl IHl tr IHr] a.
-      by rewrite head_cat_cons headI /= IHl.
+    by elim/walk_ind: t s /(walk t s) => t s //.
+  Qed.
+
+  Lemma head_flatten_lend a t:
+    head a (flatten t) = lend a t.
+  Proof.
+    by rewrite head_walk_lend_head.
   Qed.      
 
-  Lemma rend_flatten_rhead t a:
-    rend t a =  rhead (flatten t) a.
+  Lemma rhead_walk_rhead_rend a t s:
+    rhead (walk t s) a = rhead s (rend t a).
   Proof.
-    elim: t a => [//=|/= x tl IHl tr IHr] a.
-      by rewrite last_cat /= IHr.
+    move: a.
+    elim/walk_ind: t s /(walk t s) => t s //= x tl tr _ IHr IHl a.
+    by rewrite IHl IHr.
+  Qed.
+    
+  Lemma rend_flatten_rhead t a:
+    rhead (flatten t) a = rend t a.
+  Proof.
+    by rewrite rhead_walk_rhead_rend //=.
   Qed.      
 
 
@@ -781,121 +846,131 @@ Section EqBtree.
   Lemma lend_remove_lend a t:
     (lend_remove a t).1 = lend a t.
   Proof.
-    elim: t a => [//=|/= x tl IHl tr ?] a.
-    rewrite -IHl.
-    remember (lend_remove x tl) as lrxtl.
-    destruct lrxtl.
-    clear IHl; case: tl Heqlrxtl => //=.
-      by case=> ->.
+    elim/lend_remove_ind: a t/(lend_remove a t)=> a t // x tl tr _.
+    move=> y tl' tr' -> Heq z t' Heq' /=.
+    by move: Heq' Heq => -> /=.
   Qed.
 
   Lemma rend_remove_rend t a:
     (rend_remove t a).2 = rend t a.
   Proof.
-    elim: t a => [//=|/= x tl ? tr IHr] a.
-    rewrite -IHr.
-    remember (rend_remove tr x) as rrxtr.
-    destruct rrxtr.
-    clear IHr; case: tr Heqrrxtr => //=.
-      by case=> _ ->.
+    elim/rend_remove_ind: t a/(rend_remove t a)=> t a // x tl tr _.
+    move=> y tl' tr' -> Heq z t' Heq' /=.
+    by move: Heq' Heq => -> /=.
   Qed.
 
-  Lemma lend_remove_behead a t:
+  Lemma behead_cat s1 s2:
+    0 < seq.size s1 -> behead s1 ++ s2 = behead (s1 ++ s2).
+  Proof.
+    case: s1 => [| h1 s1] //=.
+  Qed.
+
+  Lemma walk_lend_remove_behead a t s:
+    walk (lend_remove a t).2 s = behead (walk t [::]) ++ s.
+  Proof.
+    move: s.
+    elim/lend_remove_ind: a t/(lend_remove a t)=> a t //= x tl tr _.
+    - move=> _ s; by rewrite walk_cat //.
+    - move=> y tl' tr' -> {tl} Heq node t' Heq' s.
+      move: Heq' Heq => -> /= -> //=.
+      by rewrite behead_cat ?walk_cat /= ?walk_cat /= ?behead_cat ?walk_cat /= ?walk_cat /= ?walk_cat //=; repeat rewrite walk_size //= addnS.
+  Qed.
+
+  Lemma flatten_lend_remove_behead a t:
     flatten (lend_remove a t).2 = behead (flatten t).
   Proof.
-    elim: t a => [//=|/= x tl IHl tr ?] _.
-    move: (IHl x) => {IHl}; case (lend_remove x tl) => /= y t.
-    case: tl => //= z tl tr' ->.
-    case: (flatten tl) => //=.
+    by rewrite /flatten walk_lend_remove_behead cats0.
   Qed.
 
   Lemma lend_remove_head a t:
     (lend_remove a t).1 = head a (flatten t).
   Proof.
-    elim: t a => [//=|/= x tl IHl tr IHr] a.
-    move: (IHl x) => {IHl}; case (lend_remove x tl) => /= y t.
-    case: tl => //= z tl tr' ->.
-    case: (flatten tl) => //=.
+    by rewrite lend_remove_lend head_flatten_lend.
   Qed.
   
-  Lemma lend_remove_head_behead a t:
-    flatten^2 (lend_remove a t) = (head a (flatten t), behead (flatten t)).
+  Lemma lend_remove_head_behead a t node t':
+    (node, t') = (lend_remove a t) ->
+    (node == head a (flatten t)) && (flatten t' == behead (flatten t)).
   Proof.
-      by rewrite /= lend_remove_head lend_remove_behead.
+    rewrite -lend_remove_head -(flatten_lend_remove_behead a)=> <- //=;
+      by rewrite !eq_refl.
   Qed.
 
   Lemma rend_remove_rhead t a:
     (rend_remove t a).2 = rhead (flatten t) a.
   Proof.
-    elim: t a => [//=|/= x tl IHl tr IHr] a.
-    move: (IHr x) => {IHr}; case (rend_remove tr x) => /= y t ->.
-    case: tr => [/=|/= z tl' tr]; first by rewrite last_cat.
-      by rewrite /= !last_cat /= !last_cat /=.
+    by rewrite rend_remove_rend rend_flatten_rhead.
   Qed.
 
-  Lemma rend_remove_rbehead t a:
+  Lemma rbehead_cat s1 s2:
+    0 < seq.size s2 -> s1 ++ rbehead s2 = rbehead (s1 ++ s2).
+  Proof.
+    by case: s2 => [| h2 s2] //; rewrite rbehead_cat_cons.
+  Qed.
+
+  Lemma eqseq_cat2r s s1 s2:
+    (s1 ++ s == s2 ++ s) = (s1 == s2).
+  Proof.
+    elim: s s1 s2 => [| h s IHs] s1 s2; first by rewrite ?cats0.
+    by rewrite -2!cat_rcons IHs eqseq_rcons eq_refl andbT.
+  Qed.
+
+  Lemma walk_rend_remove_rbehead t a s:
+    walk (rend_remove t a).1 s = rbehead (walk t [::]) ++ s.
+  Proof.
+    move: s.
+    elim/rend_remove_ind: t a/(rend_remove t a)=> t a //= x tl tr _.
+    - by move=> _ s;
+         rewrite -[[::x]]cat0s -walk_cat cats1 rbehead_rcons walk_cat//.
+    - move=> y tl' tr' -> {tr} Heq node t' Heq' s.
+      move: Heq' (Heq s) => -> /= ->.
+      rewrite -cat_cons -walk_cat; apply/eqP; rewrite eqseq_cat2r.
+      rewrite -[x :: walk _ _]cat0s -walk_cat rbehead_cat_cons.
+      by rewrite -{2}[y :: _]cat0s -walk_cat -cat_cons !rbehead_cat_cons catA !walk_cat !cat0s cat_cons walk_cat cat0s.
+  Qed.
+
+  Lemma flatten_rend_remove_rbehead t a:
     flatten (rend_remove t a).1 = rbehead (flatten t).
   Proof.
-    elim: t a => [//=|/= x tl IHl tr IHr] a.
-    rewrite rbehead_cat_cons.
-    move: (IHr x) => {IHr}; case (rend_remove tr x) => /= y t.
-    case: tr => [/=|/= z tl' tr]; first by rewrite cats0.
-    move=> -> //=.
-    remember (flatten tl' ++ z :: flatten tr) as l.
-    elim: l Heql => //=.
-    case: (flatten tl') => //=.
+    by rewrite /flatten walk_rend_remove_rbehead cats0.
   Qed.
 
-  Lemma rend_remove_rhead_rbehead t a:
-    flatten^1 (rend_remove t a) = (rbehead (flatten t),rhead (flatten t) a).
+  Lemma rend_remove_rhead_rbehead t a t' node:
+    (t', node) = (rend_remove t a) ->
+    (node == rhead (flatten t) a) && (flatten t' == rbehead (flatten t)).
   Proof.
-      by rewrite /= rend_remove_rhead rend_remove_rbehead.
+    rewrite -rend_remove_rhead -(flatten_rend_remove_rbehead t a)=> <- //=;
+      by rewrite !eq_refl.
   Qed.
-
 
   Lemma mem_lend_remove x a t:
     x \in (lend_remove a t).2 -> x \in t.
   Proof.
-    elim: t a => [//=|/= y tl IHl tr IHr] a.
-    move: (IHl y) => {IHl IHr a}.
-    case: tl => [//= ? Hin | z tl t H Hin].
-    - by rewrite in_bnode -orbA orbCA; apply/orP; right; apply/orP; right.
-    - remember (lend_remove y (tl -< z >- t)).
-      destruct p.
-      rewrite in_bnode -orbA; apply/or3P.
-      move: Hin; rewrite/= in_bnode -orbA => /or3P [/eqP<- | Hin | Hin].
-      + by apply Or31.
-      + by apply Or32, H.
-      + by apply Or33.
+    rewrite -mem_flatten flatten_lend_remove_behead -mem_flatten.
+      by apply mem_behead.
   Qed.
 
   Lemma mem_rend_remove x t a:
     x \in (rend_remove t a).1 -> x \in t.
   Proof.
-    elim: t a => [//=|/= y tl IHl tr IHr] a.
-    move: (IHr y) => {IHl IHr a}.
-    case: tr => [//= ? Hin | z t tr H Hin].
-    - by rewrite in_bnode -orbA orbCA; apply/orP; left.
-    - remember (rend_remove (t -< z >- tr) y).
-      destruct p.
-      rewrite in_bnode -orbA; apply/or3P.
-      move: Hin; rewrite/= in_bnode -orbA => /or3P [/eqP<- | Hin | Hin].
-      + by apply Or31.
-      + by apply Or32.
-      + by apply Or33, H.
+    rewrite -mem_flatten flatten_rend_remove_rbehead -mem_flatten.
+      by apply mem_rbehead.
   Qed.
+
 
   Definition rem_root_l t: btree T :=
     if t is tl -< x >- tr
     then let (node, tr') := lend_remove x tr in
          tl -< node >- tr'
     else #.
-
+  Functional Scheme rem_root_l_ind := Induction for rem_root_l Sort Prop.
+  
   Definition rem_root_r t: btree T :=
     if t is tl -< x >- tr
     then let (tl', node) := rend_remove tl x in
          tl' -< node >- tr
     else #.
+  Functional Scheme rem_root_r_ind := Induction for rem_root_r Sort Prop.
 
   Lemma rem_root_l_revtree t:
     rem_root_l (revtree t) = revtree (rem_root_r t).
@@ -915,11 +990,13 @@ Section EqBtree.
     if tr is # then tl
     else let (node, tr') := lend_remove a tr in
          tl -< node >- tr'.
+  Functional Scheme lend_merge_ind := Induction for lend_merge Sort Prop.
 
   Definition rend_merge tl tr a: btree T :=
     if tl is # then tr
     else let (tl', node) := rend_remove tl a in
          tl' -< node >- tr.
+  Functional Scheme rend_merge_ind := Induction for rend_merge Sort Prop.
 
   Lemma lend_merge_revtree a tl tr:
     lend_merge a (revtree tl) (revtree tr)
@@ -935,4 +1012,3 @@ Section EqBtree.
 End EqBtree.
 
 Definition inE := (mem_bnode1, in_bnode, inE).
-

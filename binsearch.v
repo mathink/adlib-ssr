@@ -1,5 +1,5 @@
 (* -*- mode: coq -*- *)
-(* Time-stamp: <2014/8/21 23:37:19> *)
+(* Time-stamp: <2014/8/23 13:4:32> *)
 (*
   binsearch.v 
   - mathink : Author
@@ -28,7 +28,6 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 
-    Functional Scheme rem_root_r_ind := Induction for rem_root_r Sort Prop.
 
 (**
  ** Binary Search Tree 
@@ -119,12 +118,58 @@ Section BinarySearchTree.
     by rewrite andbAC.
   Qed.
 
+  Lemma sorted_walk_bst t s:
+    sorted ord (walk t s) = (bst t) && (sorted ord s)
+                                    && (all (fun x => seq.all (ord x) s) t).
+  Proof.
+    elim/walk_ind: t s /(walk t s)=> t s; first by rewrite andbT.
+    move=> x tl tr _ Heqr ->.
+    rewrite sorted_cons1 // Heqr /= ?andbA /=.
+    case (bst tl) => //=.
+    case (bst tr) => //=;
+    rewrite /= ?andbT ?andbF //.
+    case (all (fun x0 : T => seq.all (ord x0) s) tr);
+    rewrite /= ?andbT ?andbF //.
+    case (sorted ord s) => //=;
+    rewrite /= ?andbT ?andbF //.
+    case Hta: (all (fun x0 : T => ord x0 x && seq.all (ord x0) (walk tr s)) tl).
+    - move: Hta => /eqP; rewrite eqb_id andbT /= => /allP Hta.
+      case Hsa: (seq.all (ord x) (walk tr s)).
+      move: Hsa => /eqP; rewrite eqb_id => /seq.allP Hsa.
+      + apply esym; apply/eqP; rewrite eqb_id -!andbA; apply/and4P; split.
+        * by apply/allP=> y Hin; move: (Hta _ Hin) => /andP [] //.
+        * by apply/allP=> y Hin; apply Hsa; rewrite mem_walk; apply/orP; left.
+        * by apply/seq.allP=> y Hin; apply Hsa; rewrite mem_walk; apply/orP; right.
+        * apply/allP=> y Hiny; apply/seq.allP=> z Hinz.
+          move: (Hta _ Hiny) => /andP [] _ /seq.allP; apply.
+          by rewrite mem_walk; apply/orP; right.
+      + apply esym; apply/eqP; rewrite eqbF_neg; apply/negP => H.
+        move: Hsa => /eqP; rewrite eqbF_neg => /negP; apply.
+        move: H; rewrite -!andbA => /and4P [/allP Hal /allP Har /seq.allP Has /allP Hsal].
+        apply/seq.allP=> y; rewrite mem_walk => /orP [Hin | Hin].
+        * by apply Har.
+        * by apply Has.
+    - rewrite andbF /=; apply esym; apply/eqP; rewrite eqbF_neg -!andbA;
+      apply/negP => /and4P [/allP Hal /allP Har /seq.allP Has /allP Hsal].
+      move: Hta => /eqP; rewrite eqbF_neg => /negP; apply.
+      apply/allP=> y Hin; apply/andP; split; first by apply Hal.
+      apply/seq.allP => z; rewrite mem_walk => /orP [Hinr | Hins].
+      + apply ord_transitive with x.
+        * by apply Hal.
+        * by apply Har.
+      + by move: (Hsal _ Hin) => /seq.allP; apply.
+  Qed.
+ 
+  Lemma all_predT t:
+    all predT t.
+  Proof.
+    by elim: t => [//=|/= x tl -> tr ->].
+  Qed.
+
   Lemma sorted_bst t:
     sorted ord (flatten t) = bst t.
   Proof.
-    elim: t => [//= | /= x tl IHl tr IHr].
-      by rewrite sorted_cat_cons // sorted_rcons // sorted_cons1 // IHl // IHr
-                 // !flatten_all andbA andbAC [_ && bst tl]andbC.
+    by rewrite sorted_walk_bst /= andbT all_predT andbT.
   Qed.
 
 
@@ -307,7 +352,7 @@ Section BinarySearchTree.
       all (ord a) t -> 
       all (ord (lend a t)) t.
     Proof.
-      rewrite -!flatten_all -sorted_bst lend_flatten_head.
+      rewrite -!flatten_all -sorted_bst -head_flatten_lend.
       remember (flatten t) as l.
       clear Heql t.
       case: l a => [//=| h l] a.
@@ -320,7 +365,7 @@ Section BinarySearchTree.
       all (flip ord a) t -> bst t ->
       all (flip ord (rend t a)) t.
     Proof.
-      rewrite -!flatten_all -sorted_bst rend_flatten_rhead.
+      rewrite -!flatten_all -sorted_bst -rend_flatten_rhead.
       remember (flatten t) as l.
       clear Heql t.
       case: l a => [//=| h l] a.
@@ -356,7 +401,7 @@ Section BinarySearchTree.
     Lemma bst_lend_remove a t:
       bst t -> bst (lend_remove a t).2.
     Proof.
-      rewrite -!sorted_bst lend_remove_behead.
+      rewrite -!sorted_bst flatten_lend_remove_behead.
       remember (flatten t) as l.
       clear Heql t.
       case: l => [//=| h l] .
@@ -366,7 +411,7 @@ Section BinarySearchTree.
     Lemma bst_rend_remove t a:
       bst t -> bst (rend_remove t a).1.
     Proof.
-      rewrite -!sorted_bst rend_remove_rbehead.
+      rewrite -!sorted_bst flatten_rend_remove_rbehead.
       remember (flatten t) as l.
       clear Heql t.
       elim: l => [//=| h l] .
